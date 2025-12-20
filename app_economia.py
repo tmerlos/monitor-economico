@@ -20,9 +20,7 @@ def obtener_pizarra():
     except:
         return {"Oficial": 1030.5, "Blue": 1485.0, "MEP": 1496.8, "CCL": 1555.0, "Tarjeta": 1935.45}
 
-
-
-
+pizarra = obtener_pizarra()
 
 # --- 2. SIDEBAR ---
 with st.sidebar:
@@ -131,5 +129,3 @@ data_rg = {
     "Alícuota Inscriptos": ["2%", "2%", "Escala Art. 94", "6%"]
 }
 st.table(pd.DataFrame(data_rg))
-
-
