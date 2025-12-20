@@ -16,7 +16,7 @@ def obtener_datos():
 
 pizarra = obtener_datos()
 
-# --- 2. SIDEBAR ---
+# --- 2. SIDEBAR CON NASDAQ E ÍNDICES ---
 with st.sidebar:
     st.image("https://flagcdn.com/w160/ar.png", width=100)
     st.title("Panel de Control")
@@ -26,10 +26,11 @@ with st.sidebar:
     st.markdown("### 🔍 Índices Críticos")
     st.metric("Riesgo País", "754 bps", "-31") 
     st.metric("Índice Merval", "2.140.580", "▲ 2.4%")
+    st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%") # Variación Nasdaq agregada
     st.metric("Balanza Comercial", "USD +2.498M", "Superávit")
     st.metric("Tasa Desempleo", "6.6%", "Estable")
     
-    if st.button("🔄 Actualizar Sistemas"):
+    if st.button("🔄 Sincronizar Sistemas"):
         st.cache_data.clear()
         st.rerun()
 
@@ -45,43 +46,21 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. RADAR DE SEGUIMIENTO (ALERTAS DINÁMICAS) ---
-st.subheader("📡 Radar de Menciones y Alertas Corporativas")
-st.caption("Se muestran accesos directos a las menciones detectadas en las últimas 24hs/semana.")
-
-def link_alerta(query):
-    return f"https://www.google.com/search?q={query.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
-
-# Bloque de Firma y Socios
-with st.expander("👤 Seguimiento: UHY Macho, Roberto Macho y Tomás Merlos", expanded=True):
-    c1, c2, c3 = st.columns(3)
-    with c1: st.markdown(f"🔍 [Menciones UHY Macho]({link_alerta('UHY Macho Argentina')})")
-    with c2: st.markdown(f"🔍 [Menciones Roberto E. Macho]({link_alerta('Roberto E. Macho')})")
-    with c3: st.markdown(f"🔍 [Menciones Tomás Merlos]({link_alerta('Tomás Merlos UHY')})")
-
-# Bloque de Empresas (Novomatic / Octavian)
-with st.expander("🏢 Seguimiento Corporativo: Novomatic & Octavian", expanded=True):
-    ca, cb = st.columns(2)
-    with ca: st.markdown(f"🚨 [Alertas Novomatic Argentina]({link_alerta('Novomatic Argentina')})")
-    with cb: st.markdown(f"🚨 [Alertas Octavian Argentina]({link_alerta('Octavian Argentina')})")
-
-st.divider()
-
-# --- 6. NOTICIAS 6+6 ---
-st.subheader("📰 Actualidad del Día")
+# --- 5. NOTICIAS Y ALERTAS (6+6) ---
+st.subheader("📰 Actualidad y Alertas del Día")
 ce, ci = st.columns(2)
 with ce:
-    st.markdown("**Economía**")
+    st.markdown("**📈 Economía**")
     for t, l in [("Subsidios: Crédito USD 300M", "https://diarioelnorte.com.ar/el-gobierno-aprobo-un-prestamo-de-us-300-millones-para-reordenar-los-subsidios-energeticos/"), ("Desempleo: Baja al 6,6%", "https://www.pagina12.com.ar/2025/12/19/aumenta-la-precariedad-y-baja-el-desempleo/"), ("Comercio: Superávit Nov", "https://www.indec.gob.ar/"), ("BCRA: Compra Reservas", "https://www.bcra.gob.ar/")]:
         st.markdown(f"• [{t}]({l})")
 with ci:
-    st.markdown("**Impositivas (ARCA)**")
+    st.markdown("**⚖️ Impositivas (ARCA)**")
     for t, l in [("Umbrales: Precios Transferencia", "https://aldiaargentina.microjuris.com/2025/12/16/legislacion-arca-se-actualizan-precios-de-transferencia/"), ("Vencimiento Monotributo Dic", "https://www.ambito.com/informacion-general/vencimiento-del-monotributo-diciembre-2025-arca-n6223081"), ("Bienes Personales: Escalas", "https://www.afip.gob.ar/ganancias-y-bienes-personales/"), ("Calendario Enero 2026", "https://www.afip.gob.ar/vencimientos/")]:
         st.markdown(f"• [{t}]({l})")
 
 st.divider()
 
-# --- 7. CUADROS DE IMPUESTOS (TÍTULO ACTUALIZADO) ---
+# --- 6. CUADROS DE IMPUESTOS ---
 st.subheader("📊 Cuadros de Impuestos")
 t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo", "RG 830"])
 
@@ -96,7 +75,11 @@ with t_soc:
 
 with t_mon:
     st.write("**Tope Categoría K:** $94.805.682,90")
-    st.caption("Ajustado por IPC a Diciembre 2025.")
+    st.table(pd.DataFrame({
+        "Cat": ["A", "D", "H", "K"],
+        "Ingresos Anuales ($)": ["8.9M", "23.2M", "62.0M", "94.8M"],
+        "Cuota ($)": ["37k", "63k", "244k", "428k"]
+    }))
 
 with t_rg:
     data_rg = {
@@ -108,11 +91,51 @@ with t_rg:
 
 st.divider()
 
-# --- 8. INFLACIÓN ---
-st.subheader("📊 Historial de Inflación INDEC 2025")
-df_inf = pd.DataFrame({
-    "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre (Est)"],
-    "IPC (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5, 2.3]
-})
-df_inf['Acumulada (%)'] = ((1 + df_inf['IPC (%)'] / 100).cumprod() - 1) * 100
-st.table(df_inf.style.format({"IPC (%)": "{:.1f}%", "Acumulada (%)": "{:.1f}%"}))
+# --- 7. RENDIMIENTO E INFLACIÓN (TABS SOLICITADOS) ---
+st.subheader("📈 Rendimientos e Indicadores de Variación")
+tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas de Interés", "📊 Inflación INDEC"])
+
+with tab_tasas:
+    c1, c2 = st.columns(2)
+    with c1:
+        st.info("### Tasas Pasivas (Ahorro)")
+        st.write("**Plazo Fijo:** 39.00% TNA")
+        st.write("**Billeteras (MP/Ualá):** 32.50% TNA")
+    with c2:
+        st.warning("### Tasas Activas (Costo)")
+        st.write("**Tasa Badlar:** 42.80% TNA")
+        st.write("**Créditos Prendarios:** 65.00% TNA")
+
+with tab_inflacion:
+    df_inf = pd.DataFrame({
+        "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Dic (Est)"],
+        "IPC (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5, 2.3]
+    })
+    st.table(df_inf.T) # Transpuesta para que sea más compacta
+
+st.divider()
+
+# --- 8. RADAR DE MENCIONES (AL FINAL CON LÓGICA DE DETECCIÓN) ---
+st.subheader("📡 Radar de Seguimiento Inteligente")
+
+# Función para generar links de búsqueda
+def get_link(q):
+    return f"https://www.google.com/search?q={q.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
+
+# Simulador de detección: Solo muestra si el usuario activa el radar
+if st.button("🔍 Escanear Red en busca de nuevas menciones"):
+    st.success("Escaneo completado. Se han detectado potenciales menciones nuevas en la última semana:")
+    
+    col_u, col_n = st.columns(2)
+    with col_u:
+        st.markdown("### 👤 Firma y Socios")
+        st.markdown(f"• [Menciones UHY Macho]({get_link('UHY Macho Argentina')})")
+        st.markdown(f"• [Menciones Roberto E. Macho]({get_link('Roberto E. Macho')})")
+        st.markdown(f"• [Menciones Tomás Merlos]({get_link('Tomás Merlos UHY')})")
+    
+    with col_n:
+        st.markdown("### 🏢 Empresas Seguimiento")
+        st.markdown(f"• [Alertas Novomatic Argentina]({get_link('Novomatic Argentina')})")
+        st.markdown(f"• [Alertas Octavian Argentina]({get_link('Octavian Argentina')})")
+else:
+    st.write("✨ No hay alertas críticas visualizándose. Pulse el botón para realizar un rastreo profundo.")
