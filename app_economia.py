@@ -16,13 +16,10 @@ def obtener_datos():
     except:
         pizarra = {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00}
     
-    # Clima Geolocalizado (Usuario)
+    # Clima CABA (Fijo)
     try:
-        # 1. Obtener lat/lon aproximada de la IP del usuario
-        loc = requests.get("http://ip-api.com/json/", timeout=3).json()
-        lat, lon, ciudad = loc['lat'], loc['lon'], loc['city']
-        
-        # 2. Consultar clima para esa ubicación
+        # Coordenadas de Buenos Aires
+        lat, lon = -34.61, -58.38
         url_w = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=precipitation_probability"
         res_w = requests.get(url_w, timeout=3).json()
         
@@ -30,9 +27,9 @@ def obtener_datos():
         # Probabilidad de lluvia hora actual
         prob = res_w['hourly']['precipitation_probability'][datetime.now().hour]
         
-        clima = f"{temp}°C - {ciudad} (Lluvia: {prob}%)"
+        clima = f"{temp}°C - CABA (Lluvia: {prob}%)"
     except:
-        clima = "24°C - Ubicación n/d (Lluvia: --%)"
+        clima = "27°C - CABA (Lluvia: --%)"
         
     return pizarra, clima
 
@@ -40,10 +37,13 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # Intenta cargar logo local, sino usa URL oficial de respaldo
+    # INTENTO DE CARGA DE LOGO
+    # 1. Busca el archivo local 'logo_uhy.png'
+    # 2. Si no está, intenta cargar desde la web oficial
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
+        # Link de respaldo oficial
         st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
     
     st.markdown(f"### 🌡️ {clima_actual}")
@@ -68,7 +68,6 @@ with col_tit:
     st.title("Monitor Económico e Impositivo Integral")
     st.markdown("**Powered by UHY Macho & Asociados**")
 with col_log:
-    # Logo arriba a la derecha
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
@@ -263,7 +262,6 @@ c_usa, c_prov = st.columns(2)
 
 with c_usa:
     with st.container(border=True):
-        # Título ajustado: "Tax Update" (sin "US")
         st.subheader("🇺🇸 Tax Update (Dec 2025)")
         st.markdown("**IRS Enforcement on Form 1099-K**")
         st.info("""
