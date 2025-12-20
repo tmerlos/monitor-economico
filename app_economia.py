@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Optional
 
 import requests
 import pandas as pd
-from bs4 import BeautifulSoup
+
 
 # --------------------------------------------------------------------------------------
 # Utilidades
@@ -297,3 +297,4 @@ def main() -> Dict[str, Any]:
 if __name__ == "__main__":
     data = main()
     print(json.dumps(data, ensure_ascii=False, indent=2))
+
