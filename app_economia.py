@@ -35,9 +35,10 @@ def obtener_datos():
 
 pizarra, clima_actual = obtener_datos()
 
-# --- 3. SIDEBAR (SIN LOGO) ---
+# --- 3. SIDEBAR ---
 with st.sidebar:
-    # SE ELIMINÓ EL LOGO DE AQUÍ POR PEDIDO DEL USUARIO
+    # SE USA URL DIRECTA PARA GARANTIZAR VISIBILIDAD
+    st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
     
     st.markdown(f"### 🌡️ {clima_actual}")
     st.markdown(f"📅 **{datetime.now().strftime('%d/%m/%Y')}**")
@@ -55,21 +56,14 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- 4. ENCABEZADO Y LOGO (SOLO ARRIBA A LA DERECHA) ---
+# --- 4. ENCABEZADO Y LOGO (DERECHA) ---
 col_tit, col_log = st.columns([5, 1])
-
 with col_tit:
     st.title("Monitor Económico e Impositivo Integral")
     st.markdown("**Powered by UHY Macho & Asociados**")
-
 with col_log:
-    # Lógica de Seguridad para el Logo:
-    # 1. Intenta cargar el archivo local.
-    # 2. Si falla, carga el logo de la web para evitar el error "File not found".
-    try:
-        st.image("logo_uhy.png", use_container_width=True)
-    except:
-        st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
+    # SE USA URL DIRECTA PARA GARANTIZAR VISIBILIDAD
+    st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
 
 st.markdown("---")
 
