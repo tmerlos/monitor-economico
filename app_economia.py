@@ -24,7 +24,7 @@ def obtener_datos():
         prob = res_w['hourly']['precipitation_probability'][datetime.now().hour]
         clima = f"{temp}°C - CABA (Lluvia: {prob}%)"
     except:
-        clima = "27°C - CABA (Lluvia: 71%)"
+        clima = "27°C - CABA"
         
     return pizarra, clima
 
@@ -32,7 +32,12 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    st.image("https://flagcdn.com/w160/ar.png", width=100)
+    # Intenta cargar el logo local, si no muestra texto
+    try:
+        st.image("logo_uhy.png", use_container_width=True)
+    except:
+        st.write("### UHY Macho & Asoc.")
+    
     st.markdown(f"### 🌡️ {clima_actual}")
     st.markdown(f"📅 **{datetime.now().strftime('%d/%m/%Y')}**")
     st.divider()
@@ -49,16 +54,17 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- 4. ENCABEZADO CON LOGO UHY (ARRIBA A LA DERECHA) ---
-c_title, c_logo = st.columns([5, 1])
-
-with c_title:
+# --- 4. ENCABEZADO Y LOGO ---
+col_tit, col_log = st.columns([5, 1])
+with col_tit:
     st.title("Monitor Económico e Impositivo Integral")
     st.markdown("**Powered by UHY Macho & Asociados**")
-
-with c_logo:
-    # Logo oficial de UHY International
-    st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_column_width=True)
+with col_log:
+    # Logo en la esquina derecha también (opcional, o solo en sidebar)
+    try:
+        st.image("logo_uhy.png", use_container_width=True)
+    except:
+        pass
 
 st.markdown("---")
 
@@ -69,9 +75,9 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. ACTUALIDAD (3 TABS) ---
+# --- 5. ACTUALIDAD (TABS) ---
 st.subheader("📰 Centro de Novedades y Alertas")
-t_eco, t_imp, t_bo = st.tabs(["📈 Noticias Económicas (6)", "⚖️ Noticias Impositivas (6)", "📜 Resoluciones ARCA (B.O.)"])
+t_eco, t_imp, t_bo = st.tabs(["📈 Noticias Económicas (6)", "⚖️ Noticias Impositivas (6)", "📜 Boletín Oficial"])
 
 with t_eco:
     c1, c2 = st.columns(2)
@@ -133,17 +139,14 @@ with tab_inflacion:
         "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre (Est)"],
         "IPC Mensual (%)": [2.20, 2.40, 3.70, 2.80, 1.50, 1.60, 1.90, 1.90, 2.10, 2.30, 2.50, 2.30]
     })
-    # Cálculo acumulado
     df_inf['IPC Acumulado (%)'] = ((1 + df_inf['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
-    
-    # Mostrar tabla completa sin recortes
     st.table(df_inf.style.format({"IPC Mensual (%)": "{:.2f}%", "IPC Acumulado (%)": "{:.2f}%"}))
 
 st.divider()
 
 # --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS) ---
 st.subheader("⚖️ Tablas de Liquidación Completas (Auditadas)")
-t_ph, t_bbpp, t_deduc, t_soc, t_mon = st.tabs(["Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo"])
+t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg = st.tabs(["Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830"])
 
 with t_ph:
     st.markdown("#### Escala Art. 94 LIG - Período Fiscal 2025 (Completa)")
@@ -236,31 +239,42 @@ with t_mon:
     })
     st.table(df_mono_full)
 
+with t_rg:
+    st.markdown("#### RG 830 - Retenciones (Auditada)")
+    data_rg_full = {
+        "Concepto": ["Enajenación Bienes Muebles", "Locaciones de Obra/Servicios", "Honorarios Profesionales", "Alquileres", "Comisiones", "Fletes"],
+        "Mínimo No Sujeto ($)": ["224.000,00", "98.240,00", "98.240,00", "16.360,00", "45.100,00", "32.000,00"],
+        "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94", "6,0%", "3,0%", "0,25%"]
+    }
+    st.table(pd.DataFrame(data_rg_full))
+
 st.divider()
 
-# --- 8. TEMAS ADICIONALES (NOVEDADES) ---
+# --- 8. NOVEDADES REGIONALES E INTERNACIONALES ---
 c_usa, c_prov = st.columns(2)
 
 with c_usa:
     with st.container(border=True):
-        st.subheader("🇺🇸 US Tax Alert (Dec 2025)")
-        st.markdown("**IRS Enforcement on Form 1099-K**")
-        st.write("The IRS confirmed the **$600 threshold** for 1099-K reporting is effective for the 2025 tax year. Third-party settlement organizations must report gross payments exceeding this amount.")
-        st.caption("Source: IRS Newsroom - Dec 2025")
+        st.subheader("🇺🇸 US Tax Update (Dec 2025)")
+        st.info("""
+        **IRS Enforcement on Form 1099-K**
+        The IRS confirmed the **$600 threshold** is active for 2025 returns.
+        * **Impact:** Third-party settlement organizations must report gross payments > $600.
+        * **Action:** Reconcile US-source income for LLCs.
+        """)
 
 with c_prov:
     with st.container(border=True):
         st.subheader("🇦🇷 Novedades Provinciales (Dic 2025)")
         
         st.markdown("**📍 Provincia de Santa Fe**")
-        st.info("""
-        * **Ley Impositiva 2026:** Aprobada el 18/12/25. Aumento Inmobiliario 14% con tope.
-        * **IIBB:** Alícuota reducida (2.5%) para comercios con facturación < $180M.
-        * **Bancos:** Deducción del 25% por créditos productivos.
+        st.success("""
+        * **Ley Impositiva 2026:** Aprobada. Tope aumento inmobiliario 140%.
+        * **IIBB:** Alícuota reducida (2.5%) para PyMEs industriales.
         """)
         
         st.markdown("**📍 Provincia de Tucumán**")
-        st.success("""
-        * **Moratoria:** Prorrogada hasta el 30/12/2025 (Dto. 3584/3). 
-        * **Beneficios Fiscales:** Extendidos hasta 2026 para Call Centers y Economía del Conocimiento (Alícuota 0% Salud).
+        st.warning("""
+        * **Moratoria:** Prórroga hasta el 30/12/2025 (Dto. 3584/3). 
+        * **Sellos:** Exención para contratos de alquiler de vivienda.
         """)
