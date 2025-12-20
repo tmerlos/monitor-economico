@@ -4,7 +4,7 @@ import requests
 
 st.set_page_config(page_title="Monitor ARCA Profesional", layout="wide")
 
-# --- 1. DATOS DE MERCADO ---
+# --- 1. CARGA DE DATOS DE MERCADO ---
 @st.cache_data(ttl=600)
 def obtener_pizarra():
     try:
@@ -44,25 +44,39 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. TASAS DE INTERÉS Y RENDIMIENTOS ---
-st.subheader("🏦 Rendimientos Financieros Actuales")
+# --- 5. RENDIMIENTOS FINANCIEROS ---
+st.subheader("🏦 Tasas y Rendimientos")
 c1, c2, c3 = st.columns(3)
 with c1:
     st.info("### 💰 Fondos Money Market")
     st.write("**Fima Premium (Galicia):** 34.50% TNA")
-    st.write("**Santander Ahorro:** 34.20% TNA")
+    st.write("**Superfondo Ahorro (Santander):** 34.20% TNA")
 with c2:
     st.info("### 🏦 Plazos Fijos")
-    st.write("**Tasa Minorista (Promedio):** 39.0% TNA")
-    st.write("**Tasa Badlar:** 42.1% TNA")
+    st.write("**TNA Minorista (Bancos):** 39.0%")
+    st.write("**Tasa Badlar:** 42.1%")
 with c3:
-    st.warning("### 💳 Tasas Activas")
+    st.warning("### 💳 Crédito y Financiación")
     st.write("**Préstamos Personales:** 78% TNA")
     st.write("**Adelanto Cta Cte:** 62% TNA")
 
 st.divider()
 
-# --- 6. CUADRO DE INFLACIÓN (IPC) ---
+# --- 6. PANEL DE 12 NOTICIAS (REINCORPORADO) ---
+st.subheader("📰 Actualidad del Día")
+col_not_e, col_not_i = st.columns(2)
+with col_not_e:
+    st.markdown("**📈 Economía**")
+    for n in ["Reservas: Compras por USD 180M.", "Superávit Comercial: USD 1.200M.", "Riesgo País: 790 puntos.", "Consumo: Suba del 2% en el mes.", "Cosecha: Récord proyectado de soja.", "Tasas: BCRA mantiene política estable."]:
+        st.write(f"• {n}")
+with col_not_i:
+    st.markdown("**⚖️ Impositivas (ARCA)**")
+    for n in ["Monotributo: Recategorización Enero.", "Ganancias: Publicación RIPTE anual.", "Bienes Personales: Nuevos beneficios.", "Factura Electrónica: Nuevos límites.", "Retenciones: Baja en expo servicios.", "Moratoria: Fecha límite próxima."]:
+        st.write(f"• {n}")
+
+st.divider()
+
+# --- 7. INFLACIÓN ---
 st.subheader("📊 Historial de Inflación INDEC 2025")
 df_inf = pd.DataFrame({
     "Mes": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov"],
@@ -73,36 +87,31 @@ st.table(df_inf.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)":
 
 st.divider()
 
-# --- 7. MONOTRIBUTO: ESCALAS VIGENTES (LEY 27.743) ---
-st.subheader("⚖️ Monotributo: Escalas y Topes Actualizados")
-st.caption("Valores unificados para Servicios y Bienes - ARCA 2025")
+# --- 8. MONOTRIBUTO: ESCALAS LEY 27.743 ---
+st.subheader("⚖️ Monotributo: Topes Vigentes 2025/2026")
 df_mono = pd.DataFrame({
-    "Categoría": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-    "Ingresos Brutos Anuales ($)": ["6.450.000", "9.450.000", "13.250.000", "16.450.000", "19.350.000", "24.250.000", "29.000.000", "44.000.000", "49.250.000", "56.400.000", "68.000.000"],
-    "Cuota Total Srv ($)": ["26.600", "30.280", "35.458", "45.443", "58.519", "74.825", "91.419", "175.091", "-", "-", "-"],
-    "Cuota Total Bienes ($)": ["26.600", "30.280", "35.458", "45.443", "58.519", "74.825", "91.419", "115.091", "155.120", "198.150", "246.130"]
+    "Cat.": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
+    "Ingresos Anuales ($)": ["6.450.000", "9.450.000", "13.250.000", "16.450.000", "19.350.000", "24.250.000", "29.000.000", "44.000.000", "49.250.000", "56.400.000", "68.000.000"],
+    "Cuota Total Bienes/Srv ($)": ["26.600", "30.280", "35.458", "45.443", "58.519", "74.825", "91.419", "175.091", "217.120", "258.150", "307.130"]
 })
 st.table(df_mono)
 
 st.divider()
 
-# --- 8. GANANCIAS JURÍDICAS (SOCIEDADES) ---
-st.subheader("🏢 Ganancias: Personas Jurídicas (Escala Progresiva)")
-st.caption("Valores actualizados por IPC para cierres de ejercicio 2025")
+# --- 9. GANANCIAS SOCIEDADES ---
+st.subheader("🏢 Ganancias: Personas Jurídicas (ARCA)")
 data_soc = {
     "Ganancia Neta Imponible Acumulada": ["Hasta $51.048.708", "$51.048.708 a $510.487.085", "Más de $510.487.085"],
     "Alícuota": ["25%", "30%", "35%"],
     "Monto Fijo": ["$0", "$12.762.177", "$150.593.690"],
-    "Más % sobre excedente de": ["$0", "$51.048.708", "$510.487.085"]
+    "S/ Excedente de": ["$0", "$51.048.708", "$510.487.085"]
 }
 st.table(pd.DataFrame(data_soc))
 
 st.divider()
 
-# --- 9. GANANCIAS PERSONAS HUMANAS (ESCALA ART. 94) ---
-st.subheader("👤 Ganancias: Personas Humanas (Tramos Actualizados)")
-st.caption("Escala progresiva anualizada bajo Ley 27.743")
-
+# --- 10. GANANCIAS PERSONAS HUMANAS ---
+st.subheader("👤 Ganancias: Personas Humanas (Art. 94)")
 data_ph = {
     "Ganancia Neta Imponible ($)": ["0 - 1.2M", "1.2M - 2.4M", "2.4M - 4.8M", "4.8M - 9.6M", "9.6M - 19.2M", "19.2M - 38.4M", "38.4M - 76.8M", "76.8M - 153.6M", "Más de 153.6M"],
     "Fijo ($)": ["0", "60.000", "168.000", "456.000", "1.176.000", "3.000.000", "7.416.000", "17.784.000", "41.592.000"],
@@ -112,11 +121,11 @@ st.table(pd.DataFrame(data_ph))
 
 st.divider()
 
-# --- 10. RETENCIONES RG 830 ---
+# --- 11. RETENCIONES RG 830 ---
 st.subheader("📋 Retenciones Ganancias (RG 830)")
 data_rg = {
-    "Concepto de Pago": ["Bienes Muebles", "Locaciones de Servicios", "Honorarios Profesionales", "Alquileres"],
+    "Concepto": ["Bienes Muebles", "Servicios", "Honorarios", "Alquileres"],
     "Mínimo No Sujeto ($)": ["224.000", "67.170", "67.170", "11.200"],
-    "Alícuota Inscriptos": ["2%", "2%", "Escala Art. 94 (mín 3%)", "6%"]
+    "Alícuota Inscriptos": ["2%", "2%", "Escala Art. 94", "6%"]
 }
 st.table(pd.DataFrame(data_rg))
