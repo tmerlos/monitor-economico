@@ -1,131 +1,299 @@
-import streamlit as st
-import pandas as pd
+# -*- coding: utf-8 -*-
+import os
+import re
+import json
+import datetime as dt
+from typing import List, Dict, Any, Optional
+
 import requests
+import pandas as pd
+from bs4 import BeautifulSoup
 
-st.set_page_config(page_title="Monitor ARCA Profesional", layout="wide")
+# --------------------------------------------------------------------------------------
+# Utilidades
+# --------------------------------------------------------------------------------------
 
-# --- 1. CARGA DE DATOS DE MERCADO ---
-@st.cache_data(ttl=600)
-def obtener_pizarra():
-    try:
-        res = requests.get("https://dolarapi.com/v1/dolares", timeout=3).json()
-        datos = {d['nombre']: d['venta'] for d in res}
-        return {
-            "Oficial": datos.get("Oficial", 1030.5),
-            "Blue": datos.get("Blue", 1485.0),
-            "MEP": datos.get("MEP", 1496.8),
-            "CCL": datos.get("Contado con Liquidación", 1555.0),
-            "Tarjeta": datos.get("Tarjeta", 1935.45)
-        }
-    except:
-        return {"Oficial": 1030.5, "Blue": 1485.0, "MEP": 1496.8, "CCL": 1555.0, "Tarjeta": 1935.45}
-
-pizarra = obtener_pizarra()
-
-# --- 2. SIDEBAR ---
-with st.sidebar:
-    st.image("https://flagcdn.com/w160/ar.png", width=100)
-    st.title("Panel ARCA")
-    st.markdown("### Período Fiscal 2025")
-    if st.button("🔄 Sincronizar Todo"):
-        st.cache_data.clear()
-        st.rerun()
-
-# --- 3. ENCABEZADO ---
-col1, col2 = st.columns([1, 12])
-with col1: st.image("https://flagcdn.com/w80/ar.png", width=70)
-with col2: st.title("Monitor Económico e Impositivo Integral")
-st.success(f"🏛️ **Dólar Oficial (Referencia ARCA): ${pizarra['Oficial']:,.2f}**")
-
-# --- 4. COTIZACIONES ---
-cols = st.columns(5)
-for i, (n, v) in enumerate(pizarra.items()):
-    with cols[i]: st.metric(label=f"Dólar {n}", value=f"${v:,.2f}")
-
-st.divider()
-
-# --- 5. RENDIMIENTOS FINANCIEROS ---
-st.subheader("🏦 Tasas y Rendimientos")
-c1, c2, c3 = st.columns(3)
-with c1:
-    st.info("### 💰 Fondos Money Market")
-    st.write("**Fima Premium (Galicia):** 34.50% TNA")
-    st.write("**Superfondo Ahorro (Santander):** 34.20% TNA")
-with c2:
-    st.info("### 🏦 Plazos Fijos")
-    st.write("**TNA Minorista (Bancos):** 39.0%")
-    st.write("**Tasa Badlar:** 42.1%")
-with c3:
-    st.warning("### 💳 Crédito y Financiación")
-    st.write("**Préstamos Personales:** 78% TNA")
-    st.write("**Adelanto Cta Cte:** 62% TNA")
-
-st.divider()
-
-# --- 6. PANEL DE 12 NOTICIAS (REINCORPORADO) ---
-st.subheader("📰 Actualidad del Día")
-col_not_e, col_not_i = st.columns(2)
-with col_not_e:
-    st.markdown("**📈 Economía**")
-    for n in ["Reservas: Compras por USD 180M.", "Superávit Comercial: USD 1.200M.", "Riesgo País: 790 puntos.", "Consumo: Suba del 2% en el mes.", "Cosecha: Récord proyectado de soja.", "Tasas: BCRA mantiene política estable."]:
-        st.write(f"• {n}")
-with col_not_i:
-    st.markdown("**⚖️ Impositivas (ARCA)**")
-    for n in ["Monotributo: Recategorización Enero.", "Ganancias: Publicación RIPTE anual.", "Bienes Personales: Nuevos beneficios.", "Factura Electrónica: Nuevos límites.", "Retenciones: Baja en expo servicios.", "Moratoria: Fecha límite próxima."]:
-        st.write(f"• {n}")
-
-st.divider()
-
-# --- 7. INFLACIÓN ---
-st.subheader("📊 Historial de Inflación INDEC 2025")
-df_inf = pd.DataFrame({
-    "Mes": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov"],
-    "IPC Mensual (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5]
-})
-df_inf['IPC Acumulado (%)'] = ((1 + df_inf['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
-st.table(df_inf.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)": "{:.1f}%"}))
-
-st.divider()
-
-# --- 8. MONOTRIBUTO: ESCALAS LEY 27.743 ---
-st.subheader("⚖️ Monotributo: Topes Vigentes 2025/2026")
-df_mono = pd.DataFrame({
-    "Cat.": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-    "Ingresos Anuales ($)": ["6.450.000", "9.450.000", "13.250.000", "16.450.000", "19.350.000", "24.250.000", "29.000.000", "44.000.000", "49.250.000", "56.400.000", "68.000.000"],
-    "Cuota Total Bienes/Srv ($)": ["26.600", "30.280", "35.458", "45.443", "58.519", "74.825", "91.419", "175.091", "217.120", "258.150", "307.130"]
-})
-st.table(df_mono)
-
-st.divider()
-
-# --- 9. GANANCIAS SOCIEDADES ---
-st.subheader("🏢 Ganancias: Personas Jurídicas (ARCA)")
-data_soc = {
-    "Ganancia Neta Imponible Acumulada": ["Hasta $51.048.708", "$51.048.708 a $510.487.085", "Más de $510.487.085"],
-    "Alícuota": ["25%", "30%", "35%"],
-    "Monto Fijo": ["$0", "$12.762.177", "$150.593.690"],
-    "S/ Excedente de": ["$0", "$51.048.708", "$510.487.085"]
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 }
-st.table(pd.DataFrame(data_soc))
 
-st.divider()
+TODAY = dt.date.today()
 
-# --- 10. GANANCIAS PERSONAS HUMANAS ---
-st.subheader("👤 Ganancias: Personas Humanas (Art. 94)")
-data_ph = {
-    "Ganancia Neta Imponible ($)": ["0 - 1.2M", "1.2M - 2.4M", "2.4M - 4.8M", "4.8M - 9.6M", "9.6M - 19.2M", "19.2M - 38.4M", "38.4M - 76.8M", "76.8M - 153.6M", "Más de 153.6M"],
-    "Fijo ($)": ["0", "60.000", "168.000", "456.000", "1.176.000", "3.000.000", "7.416.000", "17.784.000", "41.592.000"],
-    "Alícuota %": ["5%", "9%", "12%", "15%", "19%", "23%", "27%", "31%", "35%"]
-}
-st.table(pd.DataFrame(data_ph))
+def safe_get(url: str, params: Optional[dict] = None, headers: Optional[dict] = None, timeout: int = 30) -> requests.Response:
+    resp = requests.get(url, params=params or {}, headers=headers or HEADERS, timeout=timeout)
+    resp.raise_for_status()
+    return resp
 
-st.divider()
+def parse_table_to_df(soup: BeautifulSoup, table_selector: str) -> pd.DataFrame:
+    table = soup.select_one(table_selector)
+    if table is None:
+        return pd.DataFrame()
+    rows = []
+    headers = [th.get_text(strip=True) for th in table.select("thead th")] or [th.get_text(strip=True) for th in table.select("tr th")]
+    for tr in table.select("tbody tr"):
+        rows.append([td.get_text(strip=True) for td in tr.select("td")])
+    df = pd.DataFrame(rows, columns=headers if headers else None)
+    return df
 
-# --- 11. RETENCIONES RG 830 ---
-st.subheader("📋 Retenciones Ganancias (RG 830)")
-data_rg = {
-    "Concepto": ["Bienes Muebles", "Servicios", "Honorarios", "Alquileres"],
-    "Mínimo No Sujeto ($)": ["224.000", "67.170", "67.170", "11.200"],
-    "Alícuota Inscriptos": ["2%", "2%", "Escala Art. 94", "6%"]
-}
-st.table(pd.DataFrame(data_rg))
+# --------------------------------------------------------------------------------------
+# 1) Inflación mensual y acumulada (IPC INDEC)
+# --------------------------------------------------------------------------------------
+# Fuentes de apoyo periodístico y compilaciones públicas que reflejan el IPC y acumulados.
+
+def get_inflacion_mensual_2025() -> pd.DataFrame:
+    """
+    Obtiene inflación mensual y acumulada 2025 desde una compilación pública.
+    Retorna DataFrame con columnas: Mes, Inflación mensual (%), Inflación acumulada (%).
+    """
+    url = "https://calcularsueldo.com.ar/inflacion/inflacion-argentina-2025"
+    resp = safe_get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+    # La página incluye una tabla 'Inflación INDEC por mes 2025'
+    tables = soup.find_all("table")
+    if not tables:
+        return pd.DataFrame()
+    # Intento identificar la tabla por título cercano
+    df = pd.read_html(str(tables[0]))[0]
+    # Normaliza nombres
+    df.columns = [c.strip() for c in df.columns]
+    # Renombra si corresponde
+    rename_map = {
+        "Mes / Año": "Mes",
+        "Inflación mensual": "Inflación mensual (%)",
+        "Inflación acumulada": "Inflación acumulada (%)"
+    }
+    df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
+    return df
+
+def get_inflacion_noticias_contexto() -> Dict[str, Any]:
+    """Devuelve últimos titulares y datos de contexto (IPC de noviembre, acumulados, interanual)."""
+    news = []
+    for url in [
+        "https://www.iprofesional.com/economia/419097-inflacion-indec-2025-argentina-evolucion-mes-a-mes",
+        "https://tn.com.ar/economia/2025/12/11/inflacion-2025-los-datos-del-indec-mes-a-mes/"
+    ]:
+        try:
+            resp = safe_get(url)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            title = soup.find("title").get_text(strip=True)
+            news.append({"title": title, "url": url})
+        except Exception:
+            pass
+    return {"fuentes": news}
+
+# --------------------------------------------------------------------------------------
+# 2) Tipos de cambio del día (oficial, blue, MEP, CCL, tarjeta, cripto)
+# --------------------------------------------------------------------------------------
+
+def get_tipos_de_cambio_del_dia() -> Dict[str, Any]:
+    """
+    Obtiene cotizaciones del día de TN (oficial BNA, blue, MEP, CCL, tarjeta, cripto).
+    """
+    url = "https://tn.com.ar/economia/2025/12/20/dolar-oficial-hoy-y-dolar-blue-a-cuanto-cotizan-este-sabado-20-de-diciembre/"
+    resp = safe_get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+    text = soup.get_text(" ", strip=True)
+
+    def extract(label: str) -> Optional[float]:
+        m = re.search(rf"{label}\s*(Compra|)\s*\$?\s*([\d\.,]+)", text)
+        if not m:
+            return None
+        value = m.group(2).replace(".", "").replace(",", ".")
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+    data = {
+        "oficial_bna_compra": extract("Dólar oficial Compra"),
+        "oficial_bna_venta": extract("Dólar oficial Venta"),
+        "blue_compra": extract("Dólar blue Compra"),
+        "blue_venta": extract("Dólar blue Venta"),
+        "dolar_tarjeta": extract("Dólar tarjeta"),
+    }
+
+    # MEP / CCL / Cripto (valores mencionados en la nota)
+    def extract_inline(label: str) -> Optional[float]:
+        m = re.search(rf"{label}\s*\$?\s*([\d\.,]+)", text)
+        if not m:
+            return None
+        value = m.group(1).replace(".", "").replace(",", ".")
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+    data.update({
+        "mep": extract_inline("Dólar MEP"),
+        "ccl": extract_inline("Dólar CCL"),
+        "cripto": extract_inline("Dólar cripto"),
+        "fecha": str(TODAY)
+    })
+    return data
+
+# --------------------------------------------------------------------------------------
+# 3) Dólar oficial al final de cada mes (BNA histórico)
+# --------------------------------------------------------------------------------------
+
+def get_dolar_oficial_fin_de_mes_2025() -> pd.DataFrame:
+    """
+    Descarga valores diarios del dólar BNA en 2025 desde un sitio con histórico
+    y calcula el último valor de cada mes (venta).
+    """
+    url = "https://www.cotizacion-dolar.com.ar/dolar-historico-bna-2025.php"
+    resp = safe_get(url)
+    # La página permite seleccionar fechas; usaremos pandas.read_html para extraer tablas listadas
+    dfs = pd.read_html(resp.text)
+    # Algunas implementaciones listan varias tablas; intentamos consolidar por columnas esperadas
+    all_df = []
+    for df in dfs:
+        cols = [c.lower() for c in df.columns]
+        if any("fecha" in c for c in cols) and any("venta" in c for c in cols):
+            all_df.append(df)
+    if not all_df:
+        return pd.DataFrame()
+    hist = pd.concat(all_df, ignore_index=True)
+    # Normaliza columnas
+    hist.columns = [str(c).strip() for c in hist.columns]
+    fecha_col = [c for c in hist.columns if "Fecha" in c][0]
+    venta_col = [c for c in hist.columns if "Venta" in c][0]
+    hist[fecha_col] = pd.to_datetime(hist[fecha_col], dayfirst=True, errors="coerce")
+    hist = hist.dropna(subset=[fecha_col])
+    hist["Mes"] = hist[fecha_col].dt.to_period("M").astype(str)
+    # Tomar último día de cada mes
+    idx = hist.groupby("Mes")[fecha_col].idxmax()
+    fin_mes = hist.loc[idx, [fecha_col, "Mes", venta_col]].sort_values(fecha_col)
+    fin_mes = fin_mes.rename(columns={venta_col: "Dólar oficial BNA (venta)"})
+    return fin_mes.reset_index(drop=True)
+
+# --------------------------------------------------------------------------------------
+# 4) Noticias: 6 económicas y 6 impositivas del día
+# --------------------------------------------------------------------------------------
+
+def scrape_latest_news_from_portal(url: str, limit: int = 6) -> List[Dict[str, str]]:
+    resp = safe_get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+    items = []
+    for a in soup.select("a"):
+        title = a.get_text(strip=True)
+        href = a.get("href")
+        if href and title and len(title) > 35 and href.startswith("http"):
+            items.append({"title": title, "url": href})
+        if len(items) >= limit:
+            break
+    return items
+
+def get_noticias_economicas_y_impositivas(limit: int = 6) -> Dict[str, List[Dict[str, str]]]:
+    economicas = scrape_latest_news_from_portal("https://www.infobae.com/economia/", limit=limit)
+    # Fuentes impositivas (cambios tributarios y reforma laboral con impacto fiscal)
+    impositivas = []
+    for url in [
+        "https://www.infobae.com/economia/2025/12/10/el-gobierno-prepara-un-proyecto-con-cambios-en-cuatro-impuestos-clave-cuales-son-y-por-que-se-adelanto/",
+        "https://tn.com.ar/economia/2025/12/15/reforma-laboral-los-cambios-en-impuestos-condicionan-el-plan-fiscal-del-gobierno-y-tensan-la-meta-con-el-fmi/",
+        "https://www.elliberal.com.ar/nota/66659/2025/12/ganancias-iva-e-impuestos-internos-todos-los-cambios-tributarios-que-impulsa-la-reforma-laboral"
+    ]:
+        try:
+            resp = safe_get(url)
+            soup = BeautifulSoup(resp.text, "html.parser")
+            title = soup.find("title").get_text(strip=True)
+            impositivas.append({"title": title, "url": url})
+        except Exception:
+            pass
+    # Si faltan noticias impositivas, completa con titulares económicos relacionados
+    if len(impositivas) < limit:
+        extra = scrape_latest_news_from_portal("https://www.infobae.com/economia/", limit=(limit - len(impositivas)))
+        impositivas.extend(extra)
+    return {"economicas": economicas[:limit], "impositivas": impositivas[:limit]}
+
+# --------------------------------------------------------------------------------------
+# 5) Tabla actual de retenciones RG 830 (ARCA)
+# --------------------------------------------------------------------------------------
+
+def get_rg_830_retenciones() -> pd.DataFrame:
+    """
+    Obtiene la tabla vigente de retenciones del régimen de la RG 830, según la biblioteca de ARCA.
+    Nota: el documento puede estar en PDF/HTML; aquí se intenta extraer tablas HTML si están disponibles.
+    """
+    url = "https://biblioteca.afip.gob.ar/dcp/REAG09005740_2025_07_30"  # Sitio ARCA (AFIP biblioteca)
+    resp = safe_get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+    # Buscar tablas en el documento
+    tables = soup.find_all("table")
+    if not tables:
+        # Si no hay tablas HTML, intenta detectar enlaces a PDF
+        links = [a.get("href") for a in soup.select("a") if a.get("href", "").lower().endswith(".pdf")]
+        if links:
+            return pd.DataFrame({"Mensaje": ["La tabla principal está en PDF. Descargue y procese el PDF: " + links[0]]})
+        return pd.DataFrame({"Mensaje": ["No se encontró tabla HTML en la página de la RG 830."]})
+    # Tomar la primera tabla reconocible
+    df = pd.read_html(str(tables[0]))[0]
+    df.columns = [str(c).strip() for c in df.columns]
+    return df
+
+# --------------------------------------------------------------------------------------
+# 6) Última tabla del Impuesto a las Ganancias para empresas (Personas jurídicas, ARCA)
+# --------------------------------------------------------------------------------------
+
+def get_ganancias_empresas_escala() -> pd.DataFrame:
+    """
+    Extrae la escala vigente para ejercicios iniciados a partir del 1/1/2025 del sitio de ARCA.
+    """
+    url = "https://www.arca.gob.ar/gananciasYBienes/ganancias/personas-juridicas/determinacion/escala.asp"
+    resp = safe_get(url)
+    soup = BeautifulSoup(resp.text, "html.parser")
+    # Buscar bloque/tabla asociado a "Para ejercicios fiscales iniciados a partir del 1º de enero de 2025"
+    text = soup.get_text("\n", strip=True)
+    # Extraer tablas HTML
+    tables = soup.find_all("table")
+    dfs = [pd.read_html(str(t))[0] for t in tables] if tables else []
+    if not dfs:
+        return pd.DataFrame({"Mensaje": ["No se encontró la tabla de la escala en HTML."]})
+    # Seleccionar la tabla que contenga columnas de tramos/alícuotas
+    candidates = []
+    for df in dfs:
+        cols_lower = [str(c).lower() for c in df.columns]
+        if any("ganancia" in c for c in cols_lower) or any("alícuota" in c for c in cols_lower) or any("impuesto" in c for c in cols_lower):
+            candidates.append(df)
+    if candidates:
+        df = candidates[0]
+    else:
+        df = dfs[0]
+    df.columns = [str(c).strip() for c in df.columns]
+    return df
+
+# --------------------------------------------------------------------------------------
+# Runner principal
+# --------------------------------------------------------------------------------------
+
+def main() -> Dict[str, Any]:
+    out: Dict[str, Any] = {}
+
+    # Inflación
+    out["inflacion_2025"] = get_inflacion_mensual_2025().to_dict(orient="records")
+    out["inflacion_contexto_fuentes"] = get_inflacion_noticias_contexto()
+
+    # Tipos de cambio del día
+    out["tipos_de_cambio_hoy"] = get_tipos_de_cambio_del_dia()
+
+    # Dólar oficial fin de mes 2025
+    fin_mes = get_dolar_oficial_fin_de_mes_2025()
+    out["dolar_oficial_fin_de_mes_2025"] = fin_mes.to_dict(orient="records")
+
+    # Noticias
+    noticias = get_noticias_economicas_y_impositivas(limit=6)
+    out["noticias_economicas"] = noticias["economicas"]
+    out["noticias_impositivas"] = noticias["impositivas"]
+
+    # RG 830 retenciones
+    rg830 = get_rg_830_retenciones()
+    out["rg830_retenciones"] = rg830.to_dict(orient="records")
+
+    # Ganancias empresas (escala)
+    escala = get_ganancias_empresas_escala()
+    out["ganancias_empresas_escala"] = escala.to_dict(orient="records")
+
+    return out
+
+if __name__ == "__main__":
+    data = main()
+    print(json.dumps(data, ensure_ascii=False, indent=2))
