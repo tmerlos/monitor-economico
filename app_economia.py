@@ -49,8 +49,17 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- 4. ENCABEZADO ---
-st.title("Monitor Económico e Impositivo Integral")
+# --- 4. ENCABEZADO CON LOGO UHY (ARRIBA A LA DERECHA) ---
+c_title, c_logo = st.columns([5, 1])
+
+with c_title:
+    st.title("Monitor Económico e Impositivo Integral")
+    st.markdown("**Powered by UHY Macho & Asociados**")
+
+with c_logo:
+    # Logo oficial de UHY International
+    st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_column_width=True)
+
 st.markdown("---")
 
 cols = st.columns(len(pizarra))
@@ -229,15 +238,29 @@ with t_mon:
 
 st.divider()
 
-# --- 8. TEMA INTERNACIONAL (ULTIMO - DICIEMBRE 2025) ---
-with st.container(border=True):
-    st.subheader("🇺🇸 US Tax Alert: IRS Enforcement on Form 1099-K (Dec 2025)")
-    st.markdown("""
-    **New Reporting Standards for Digital Payments**
-    The IRS has confirmed that for the 2025 tax year, the **$600 reporting threshold** for Form 1099-K is officially in effect, ending the transition period.
-    
-    * **Scope:** Third-party settlement organizations (PayPal, Venmo, Stripe) must report gross payments exceeding $600.
-    * **Key Risk:** Foreign owners of US LLCs (consultants/E-commerce) will have higher transparency for their US-source income.
-    * **Action:** Ensure your US tax filings (Form 1040-NR or 1120/5472) align with these reported amounts to avoid audits.
-    * **Source:** [IRS Newsroom - December 2025 Update](https://www.irs.gov/newsroom)
-    """)
+# --- 8. TEMAS ADICIONALES (NOVEDADES) ---
+c_usa, c_prov = st.columns(2)
+
+with c_usa:
+    with st.container(border=True):
+        st.subheader("🇺🇸 US Tax Alert (Dec 2025)")
+        st.markdown("**IRS Enforcement on Form 1099-K**")
+        st.write("The IRS confirmed the **$600 threshold** for 1099-K reporting is effective for the 2025 tax year. Third-party settlement organizations must report gross payments exceeding this amount.")
+        st.caption("Source: IRS Newsroom - Dec 2025")
+
+with c_prov:
+    with st.container(border=True):
+        st.subheader("🇦🇷 Novedades Provinciales (Dic 2025)")
+        
+        st.markdown("**📍 Provincia de Santa Fe**")
+        st.info("""
+        * **Ley Impositiva 2026:** Aprobada el 18/12/25. Aumento Inmobiliario 14% con tope.
+        * **IIBB:** Alícuota reducida (2.5%) para comercios con facturación < $180M.
+        * **Bancos:** Deducción del 25% por créditos productivos.
+        """)
+        
+        st.markdown("**📍 Provincia de Tucumán**")
+        st.success("""
+        * **Moratoria:** Prorrogada hasta el 30/12/2025 (Dto. 3584/3). 
+        * **Beneficios Fiscales:** Extendidos hasta 2026 para Call Centers y Economía del Conocimiento (Alícuota 0% Salud).
+        """)
