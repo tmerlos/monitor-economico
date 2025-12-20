@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-st.set_page_config(page_title="Monitor ARCA Senior - Datos Completos", layout="wide")
+st.set_page_config(page_title="Monitor ARCA & Radar Senior", layout="wide")
 
 # --- 1. CARGA DE MERCADOS ---
 @st.cache_data(ttl=600)
@@ -44,60 +44,65 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. CUADROS DE IMPUESTOS (SET COMPLETO) ---
+# --- 5. NOTICIAS Y ALERTAS (RESTAURADO) ---
+st.subheader("📰 Actualidad y Alertas del Día")
+ce, ci = st.columns(2)
+with ce:
+    st.markdown("**📈 Economía**")
+    for t, l in [
+        ("Subsidios: Crédito USD 300M para energía", "https://diarioelnorte.com.ar/el-gobierno-aprobo-un-prestamo-de-us-300-millones-para-reordenar-los-subsidios-energeticos/"),
+        ("Desempleo: Baja al 6,6% según INDEC", "https://www.pagina12.com.ar/2025/12/19/aumenta-la-precariedad-y-baja-el-desempleo/"),
+        ("Comercio Exterior: Superávit Noviembre", "https://www.indec.gob.ar/"),
+        ("BCRA: Compra sostenida de Reservas", "https://www.bcra.gob.ar/"),
+        ("Inflación: Proyecciones cierre 2025", "https://www.ambito.com/economia"),
+        ("Billetes: Circulación de nueva denominación", "https://www.lanacion.com.ar/economia/")
+    ]:
+        st.markdown(f"• [{t}]({l})")
+with ci:
+    st.markdown("**⚖️ Impositivas (ARCA)**")
+    for t, l in [
+        ("Umbrales: Precios Transferencia 2025", "https://aldiaargentina.microjuris.com/2025/12/16/legislacion-arca-se-actualizan-precios-de-transferencia/"),
+        ("Vencimiento Monotributo Diciembre", "https://www.ambito.com/informacion-general/vencimiento-del-monotributo-diciembre-2025-arca-n6223081"),
+        ("Bienes Personales: Nuevas escalas", "https://www.afip.gob.ar/ganancias-y-bienes-personales/"),
+        ("Calendario Enero 2026: Vencimientos", "https://www.afip.gob.ar/vencimientos/"),
+        ("Blanqueo: Prórrogas y novedades", "https://www.argentina.gob.ar/noticias"),
+        ("Facturación Electrónica: Nuevos requisitos", "https://www.afip.gob.ar/noticias/")
+    ]:
+        st.markdown(f"• [{t}]({l})")
+
+st.divider()
+
+# --- 6. CUADROS DE IMPUESTOS (SET COMPLETO) ---
 st.subheader("📊 Cuadros de Impuestos")
-t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo 2025 (Completo)", "RG 830 (Completo)"])
+t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo 2025", "RG 830"])
 
 with t_soc:
-    st.write("**Escala Progresiva Ley 27.630**")
-    
     data_soc = {
-        "Tramo Ganancia Neta": ["Hasta $101.679.575,26", "De $101.679.575,26 a $1.016.795.752,60", "Más de $1.016.795.752,60"],
+        "Tramo Ganancia Neta": ["Hasta $101.6M", "De $101.6M a $1.016M", "Más de $1.016M"],
         "Alícuota": ["25%", "30%", "35%"],
-        "Monto Fijo": ["$0,00", "$25.419.893,82", "$299.954.747,02"],
-        "Sobre Excedente de": ["$0,00", "$101.679.575,26", "$1.016.795.752,60"]
+        "Monto Fijo": ["$0,00", "$25.419.893,82", "$299.954.747,02"]
     }
     st.table(pd.DataFrame(data_soc))
 
 with t_mon:
-    st.write("**Escala de Categorías Vigentes - Diciembre 2025**")
     df_mono_full = pd.DataFrame({
-        "Categoría": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-        "Ingresos Brutos Anuales ($)": [
-            "8.987.312,20", "13.345.101,40", "18.677.202,30", "23.211.504,10", "27.321.405,80", 
-            "34.112.508,40", "40.876.310,10", "62.011.514,50", "69.455.618,20", "79.445.820,10", "94.805.682,90"
-        ],
-        "Cuota Total Mensual ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
+        "Cat": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
+        "Ingresos Anuales ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
+        "Cuota Total ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
     })
     st.table(df_mono_full)
 
 with t_rg:
-    st.write("**Anexo II - Régimen de Retención General (RG 830)**")
-    
     data_rg_full = {
-        "Concepto": [
-            "Enajenación de Bienes Muebles", 
-            "Locaciones de Obra/Servicios (No Profesionales)", 
-            "Honorarios Profesionales Liberales", 
-            "Alquileres de Inmuebles", 
-            "Comisiones y Consignaciones", 
-            "Intereses por Préstamos", 
-            "Derechos de Autor", 
-            "Fletes y Acarreos", 
-            "Subsidios y Ayudas del Estado"
-        ],
-        "Mínimo No Sujeto ($)": [
-            "224.000,00", "98.240,00", "98.240,00", "16.360,00", "45.100,00", 
-            "Sin Mínimo", "22.400,00", "32.000,00", "15.000,00"
-        ],
-        "Alícuota Inscripto": ["2,0%", "2,0%", "Escala Art. 94 (Mín 3%)", "6,0%", "3,0%", "6,0%", "Escala Art. 94", "0,25%", "2,0%"],
-        "Alícuota No Insc.": ["25%", "28%", "28%", "28%", "28%", "28%", "28%", "25%", "28%"]
+        "Concepto": ["Bienes Muebles", "Servicios", "Honorarios", "Alquileres", "Comisiones", "Fletes"],
+        "Mínimo No Sujeto ($)": ["224.000", "98.240", "98.240", "16.360", "45.100", "32.000"],
+        "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94", "6,0%", "3,0%", "0,25%"]
     }
     st.table(pd.DataFrame(data_rg_full))
 
 st.divider()
 
-# --- 6. RENDIMIENTOS E INFLACIÓN ---
+# --- 7. RENDIMIENTOS E INFLACIÓN ---
 st.subheader("📈 Rendimientos e Inflación")
 tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas de Interés", "📊 Inflación INDEC"])
 
@@ -107,7 +112,6 @@ with tab_tasas:
         st.info("### 💰 Fondos y Bancos")
         st.write("**Fima Premium (Santander):** 34.20% TNA")
         st.write("**Santander Plazo Fijo:** 39.00% TNA")
-        st.write("**Galicia Money Market:** 34.50% TNA")
     with t2:
         st.warning("### 🏦 Referencias")
         st.write("**Tasa Badlar:** 42.80% TNA")
@@ -123,23 +127,21 @@ with tab_inflacion:
 
 st.divider()
 
-# --- 7. RADAR DE SEGUIMIENTO (CONDICIONAL) ---
-# Simulación de detección
-novedades = {"UHY": True, "Roberto": True, "Empresas": True}
+# --- 8. RADAR DE SEGUIMIENTO (AL FINAL Y CONDICIONAL) ---
+# Lógica: Solo muestra si hay novedades (Simulado en True para esta entrega)
+novedades_detectadas = True 
 
-if any(novedades.values()):
+if novedades_detectadas:
     st.subheader("📡 Radar de Alertas: Menciones Nuevas")
-    def link(q): return f"https://www.google.com/search?q={q.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
+    def link_google(q): return f"https://www.google.com/search?q={q.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
     
     ca, cb = st.columns(2)
     with ca:
         st.info("### 👤 Firma y Socios")
-        st.markdown(f"• [Menciones: **UHY Macho Argentina**]({link('UHY Macho Argentina')})")
-        st.markdown(f"• [Menciones: **Roberto E. Macho**]({link('Roberto E. Macho')})")
-        st.markdown(f"• [Menciones: **Tomás Merlos**]({link('Tomás Merlos UHY')})")
+        st.markdown(f"• [Menciones: **UHY Macho Argentina**]({link_google('UHY Macho Argentina')})")
+        st.markdown(f"• [Menciones: **Roberto E. Macho**]({link_google('Roberto E. Macho')})")
+        st.markdown(f"• [Seguimiento: **Tomás Merlos**]({link_google('Tomás Merlos UHY')})")
     with cb:
         st.warning("### 🏢 Corporativo")
-        st.markdown(f"• [Radar: **Novomatic Argentina**]({link('Novomatic Argentina')})")
-        st.markdown(f"• [Radar: **Octavian Argentina**]({link('Octavian Argentina')})")
-else:
-    st.empty()
+        st.markdown(f"• [Radar: **Novomatic Argentina**]({link_google('Novomatic Argentina')})")
+        st.markdown(f"• [Radar: **Octavian Argentina**]({link_google('Octavian Argentina')})")
