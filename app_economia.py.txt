@@ -1,0 +1,30 @@
+import streamlit as st
+import pandas as pd
+import requests
+
+st.title("🇦🇷 Monitor de Inflación y Dólar")
+
+# Función para obtener datos del dólar (Blue y Oficial)
+def obtener_datos():
+    try:
+        url = "https://dolarapi.com/v1/dolares"
+        respuesta = requests.get(url)
+        datos = respuesta.json()
+        return datos
+    except Exception as e:
+        return None
+
+datos_dolar = obtener_datos()
+
+if datos_dolar:
+    st.subheader("Cotizaciones actuales")
+    # Creamos columnas para mostrar las tarjetas
+    cols = st.columns(len(datos_dolar))
+    
+    for i, dolar in enumerate(datos_dolar):
+        with cols[i]:
+            st.metric(label=dolar['nombre'], value=f"${dolar['compra']}", delta=f"Venta: ${dolar['venta']}")
+else:
+    st.error("No se pudieron cargar los datos. Revisa tu conexión a internet.")
+
+st.info("La aplicación se actualiza automáticamente al recargar la página.")
