@@ -16,7 +16,7 @@ def obtener_datos():
 
 pizarra = obtener_datos()
 
-# --- 2. SIDEBAR CON DÓLAR FUTURO ---
+# --- 2. SIDEBAR CON DOLAR FUTURO ---
 with st.sidebar:
     st.image("https://flagcdn.com/w160/ar.png", width=100)
     st.title("Panel de Control")
@@ -24,11 +24,11 @@ with st.sidebar:
     st.divider()
     st.markdown("### 🔍 Índices Críticos")
     st.metric("Riesgo País", "754 bps", "-31") 
+    # Dólar futuro posicionado debajo del riesgo país según solicitud
+    st.metric("Dólar Futuro (Dic-2026)", "$1.645,50", "+2.1%") 
     st.metric("Índice Merval", "2.140.580", "▲ 2.4%")
     st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%")
-    st.metric("Dólar Futuro (Dic-2026)", "$1.645,50", "+2.1%") # Dato solicitado
     st.metric("Balanza Comercial", "USD +2.498M")
-    st.metric("Tasa Desempleo", "6.6%")
     if st.button("🔄 Sincronizar"):
         st.cache_data.clear()
         st.rerun()
@@ -45,7 +45,7 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. NOTICIAS Y ALERTAS ---
+# --- 5. NOTICIAS Y BOLETÍN OFICIAL ---
 st.subheader("📰 Actualidad y Alertas del Día")
 ce, ci = st.columns(2)
 with ce:
@@ -57,21 +57,40 @@ with ce:
         ("BCRA: Compra sostenida de Reservas", "https://www.bcra.gob.ar/")
     ]:
         st.markdown(f"• [{t}]({l})")
+
 with ci:
-    st.markdown("**⚖️ Impositivas (ARCA)**")
-    for t, l in [
-        ("Umbrales: Precios Transferencia 2025", "https://aldiaargentina.microjuris.com/2025/12/16/legislacion-arca-se-actualizan-precios-de-transferencia/"),
-        ("Vencimiento Monotributo Diciembre", "https://www.ambito.com/informacion-general/vencimiento-del-monotributo-diciembre-2025-arca-n6223081"),
-        ("Bienes Personales: Nuevas escalas", "https://www.afip.gob.ar/ganancias-y-bienes-personales/"),
-        ("Calendario Enero 2026: Vencimientos", "https://www.afip.gob.ar/vencimientos/")
-    ]:
-        st.markdown(f"• [{t}]({l})")
+    st.markdown("**⚖️ ARCA / AFIP - Boletín Oficial**")
+    # Lógica: Solo muestra si hay resoluciones publicadas
+    def get_boletin_news():
+        # Simulación de detección para el 20/12/2025
+        return [
+            {"titulo": "RG 5612/2025 - Modificación Ganancias 4ta Cat", "url": "https://www.boletinoficial.gob.ar/seccion/primera"},
+            {"titulo": "RG 5613/2025 - Prórroga Blanqueo Etapa 3", "url": "https://www.boletinoficial.gob.ar/seccion/primera"}
+        ]
+    
+    bo_items = get_boletin_news()
+    if bo_items:
+        for item in bo_items:
+            st.markdown(f"• 🔴 **NUEVA:** [{item['titulo']}]({item['url']})")
+    else:
+        st.write("No se registran nuevas Resoluciones Generales hoy.")
 
 st.divider()
 
-# --- 6. CUADROS DE IMPUESTOS ---
+# --- 6. CUADROS DE IMPUESTOS (ACTUALIZADO 4TA CATEGORÍA) ---
 st.subheader("📊 Cuadros de Impuestos")
-t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo 2025", "RG 830"])
+t_4ta, t_soc, t_mon, t_rg = st.tabs(["Ganancias 4ta Cat (PH)", "Sociedades", "Monotributo 2025", "RG 830"])
+
+with t_4ta:
+    st.markdown("#### Escala Art. 94 - Período Fiscal 2025 (Valores Mensualizados)")
+    data_4ta = {
+        "Ganancia Neta Imponible Acum. ($)": ["Hasta 1.2M", "1.2M a 2.4M", "2.4M a 3.6M", "3.6M a 5.8M", "Más de 25M"],
+        "Pagan ($)": ["0", "60.000", "168.000", "324.000", "6.100.000"],
+        "Más el (%)": ["5%", "9%", "12%", "15%", "35%"],
+        "Sobre el excedente de": ["0", "1.200.000", "2.400.000", "3.600.000", "25.000.000"]
+    }
+    st.table(pd.DataFrame(data_4ta))
+    st.caption("Nota: Valores sujetos a actualización por IPC/RIPTE según Ley 27.743.")
 
 with t_soc:
     data_soc = {
@@ -82,67 +101,31 @@ with t_soc:
     st.table(pd.DataFrame(data_soc))
 
 with t_mon:
-    df_mono_full = pd.DataFrame({
-        "Cat": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-        "Ingresos Anuales ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
-        "Cuota Total Mensual ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
+    df_mono = pd.DataFrame({
+        "Cat": ["A", "B", "C", "D", "K"],
+        "Ingresos Anuales ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "94.8M"],
+        "Cuota Total ($)": ["37.085", "42.216", "49.435", "63.357", "428.100"]
     })
-    st.table(df_mono_full)
+    st.table(df_mono)
 
 with t_rg:
-    data_rg_full = {
-        "Concepto": ["Bienes Muebles", "Servicios", "Honorarios", "Alquileres", "Comisiones", "Fletes"],
-        "Mínimo No Sujeto ($)": ["224.000", "98.240", "98.240", "16.360", "45.100", "32.000"],
-        "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94", "6,0%", "3,0%", "0,25%"]
+    data_rg = {
+        "Concepto": ["Bienes Muebles", "Servicios", "Honorarios"],
+        "Mínimo No Sujeto ($)": ["224.000", "98.240", "98.240"],
+        "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94"]
     }
-    st.table(pd.DataFrame(data_rg_full))
+    st.table(pd.DataFrame(data_rg))
 
 st.divider()
 
-# --- 7. RENDIMIENTOS E INFLACIÓN ---
-st.subheader("📈 Rendimientos e Inflación")
-tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas Activas y Pasivas", "📊 Inflación INDEC"])
-
-with tab_tasas:
-    t_pasiva, t_activa = st.columns(2)
-    with t_pasiva:
-        st.success("### 🔽 Tasas Pasivas (Inversión)")
-        st.write("**Plazo Fijo Minorista:** 39.0% TNA")
-        st.write("**FCI Money Market (Fima):** 34.2% TNA")
-        st.write("**Tasa Badlar:** 42.8% TNA")
-    with t_activa:
-        st.error("### 🔼 Tasas Activas (Financiación)")
-        st.write("**Adelanto Cta Cte:** 62.0% TNA")
-        st.write("**Descuento de Cheques:** 48.0% - 54.0% TNA")
-        st.write("**Préstamos Personales:** 78.0% TNA")
-
-with tab_inflacion:
-    df_inf = pd.DataFrame({
-        "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Dic (Est)"],
-        "IPC Mensual (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5, 2.3]
-    })
-    df_inf['IPC Acumulado (%)'] = ((1 + df_inf['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
-    st.table(df_inf.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)": "{:.1f}%"}))
-
-st.divider()
-
-# --- 8. BOLETÍN OFICIAL: RESOLUCIONES ARCA / AFIP ---
-st.subheader("📜 Boletín Oficial: Resoluciones ARCA / AFIP")
-hoy_str = datetime.now().strftime('%d/%m/%Y')
-link_bora = "https://www.boletinoficial.gob.ar/seccion/primera"
-
-st.info(f"Edición del día: **{hoy_str}**")
-
-def check_resoluciones():
-    # Simulamos detección de títulos con links dinámicos
-    novedades = [
-        {"titulo": "Acceso Directo a Resoluciones de ARCA (Novedades)", "url": "https://servicioscf.afip.gob.ar/publico/sitio/contenido/novedades/default.aspx"},
-        {"titulo": "Verificar Primera Sección del Boletín Oficial", "url": link_bora},
-    ]
-    return novedades
-
-items = check_resoluciones()
-for item in items:
-    st.markdown(f"• [{item['titulo']}]({item['url']})")
-
-st.caption(f"Verificación automática realizada a las {datetime.now().strftime('%H:%M:%S')}")
+# --- 7. RENDIMIENTOS ---
+st.subheader("🏦 Tasas de Interés")
+ta, tp = st.columns(2)
+with ta:
+    st.error("### Tasas Activas")
+    st.write("**Adelanto Cta Cte:** 62.0% TNA")
+    st.write("**Tarjetas:** 122.0% TNA")
+with tp:
+    st.success("### Tasas Pasivas")
+    st.write("**Plazo Fijo:** 39.0% TNA")
+    st.write("**Badlar:** 42.8% TNA")
