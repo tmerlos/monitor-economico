@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 
-st.set_page_config(page_title="Monitor Económico Real 2025", layout="wide")
+st.set_page_config(page_title="Monitor Económico 2025", layout="wide")
 
 # --- 1. VALORES DE RESPALDO (Sábado 20 de Dic 2025) ---
 VALORES_BACKUP = {
@@ -33,7 +33,7 @@ def obtener_pizarra():
 
 pizarra = obtener_pizarra()
 
-# --- 3. ENCABEZADO ---
+# --- 3. ENCABEZADO CON BANDERA ---
 st.title("🇦🇷 Monitor Económico e Impositivo Integral")
 st.success(f"🏛️ **Dólar Oficial BCRA: ${pizarra['Oficial']:,.2f}**")
 
@@ -49,7 +49,7 @@ for i, n in enumerate(nombres):
 
 st.divider()
 
-# --- 5. PANEL DE 12 NOTICIAS (SUBIDO AQUÍ) ---
+# --- 5. PANEL DE 12 NOTICIAS ---
 st.subheader("📰 Actualidad Económica e Impositiva")
 col_e, col_i = st.columns(2)
 with col_e:
