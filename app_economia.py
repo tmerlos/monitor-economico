@@ -19,12 +19,10 @@ pizarra = obtener_mercados()
 # --- 2. SIDEBAR E INDICES ---
 with st.sidebar:
     st.image("https://flagcdn.com/w160/ar.png", width=100)
-    st.markdown(f"""
-        <div style="background-color:#003366; padding:10px; border-radius:10px; text-align:center; border: 2px solid #FFD700;">
-            <h2 style="color:white; margin:0;">{datetime.now().strftime('%d/%m/%Y')}</h2>
-            <p style="color:#FFD700; margin:0;"><b>CONTROL DE AUDITORÍA</b></p>
-        </div>
-    """, unsafe_markdown=True)
+    
+    # Versión simplificada del cuadro de fecha para evitar el TypeError
+    st.sidebar.markdown(f"### 📅 {datetime.now().strftime('%d/%m/%Y')}")
+    st.sidebar.info("**ESTADO: CONTROL DE AUDITORÍA**")
     
     st.divider()
     st.markdown("### 🔍 Índices Críticos")
@@ -39,7 +37,7 @@ with st.sidebar:
         st.rerun()
 
 # --- 3. ENCABEZADO Y DIVISAS ---
-st.title("Monitor Económico e Impositivo Integral")
+st.title("Monitor Económico e Impositivo Integral 🇦🇷")
 cols = st.columns(len(pizarra))
 for i, (n, v) in enumerate(pizarra.items()):
     with cols[i]: st.metric(label=f"Dólar {n}", value=f"${v:,.2f}")
@@ -64,11 +62,11 @@ st.divider()
 
 # --- 5. CUADROS DE IMPUESTOS (AUDITADOS) ---
 st.subheader("📊 Herramientas de Liquidación Auditadas")
-t_4ta, t_soc, t_mon, t_tasas = st.tabs(["Ganancias 4ta Cat (Art. 94)", "Sociedades", "Monotributo", "Rendimientos"])
+t_4ta, t_deduc, t_soc, t_mon, t_tasas = st.tabs(["Ganancias 4ta Cat (Art. 94)", "Deducciones 2025", "Sociedades", "Monotributo", "Rendimientos"])
 
 with t_4ta:
     st.markdown("#### Escala Impositiva Art. 94 LIG - Período Fiscal 2025")
-    # Tabla reconstruida con el valor de tope auditado de $49.667.273,02
+    
     data_4ta = {
         "Ganancia Neta Imponible Acum. ($)": [
             "0,00 a 1.636.568,36", "1.636.568,36 a 3.273.136,72", "3.273.136,72 a 4.909.705,08",
@@ -80,7 +78,14 @@ with t_4ta:
         "S/ Excedente de ($)": ["0,00", "1.636.568,36", "3.273.136,72", "4.909.705,08", "7.364.557,62", "14.729.115,24", "22.093.672,86", "33.140.509,29", "49.667.273,02"]
     }
     st.table(pd.DataFrame(data_4ta))
-    st.info("💡 Valores actualizados según Coeficiente de Actualización Anual previsto en la Ley 27.743.")
+
+with t_deduc:
+    st.markdown("#### Deducciones Personales - Valores Anuales 2025")
+    data_deduc = {
+        "Concepto": ["Mínimo No Imponible (MNI)", "Deducción Especial (Art. 30 inc c)", "Cónyuge / Unión Convivencial", "Hijo / Hijastro (menor 18)", "Hijo / Hijastro Incapacitado"],
+        "Importe Anual ($)": ["4.093.923,60", "19.650.833,28", "3.858.913,56", "1.946.069,52", "3.892.139,04"]
+    }
+    st.table(pd.DataFrame(data_deduc))
 
 with t_soc:
     data_soc = {
@@ -91,8 +96,6 @@ with t_soc:
     st.table(pd.DataFrame(data_soc))
 
 with t_mon:
-    # Set completo de categorías
-    st.write("**Topes Anuales de Facturación**")
     df_mono = pd.DataFrame({
         "Cat": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
         "Ingresos Anuales ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
@@ -116,7 +119,6 @@ st.divider()
 # --- 6. BOLETÍN OFICIAL ---
 st.subheader("📜 Boletín Oficial: Verificación de Resoluciones")
 def get_bo_normas():
-    # Simulación de verificación técnica al 20/12/2025
     return [
         {"desc": "RG 5612/2025: Actualización de importes de retención por movilidad.", "link": "https://www.boletinoficial.gob.ar/seccion/primera"},
         {"desc": "RG 5613/2025: Modificación de plazos para regímenes informativos.", "link": "https://www.boletinoficial.gob.ar/seccion/primera"}
