@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import os
 from datetime import datetime
 
 # --- 1. CONFIGURACIÓN ---
@@ -35,10 +36,18 @@ def obtener_datos():
 
 pizarra, clima_actual = obtener_datos()
 
+# --- DEFINICIÓN DE RUTA ABSOLUTA PARA EL LOGO ---
+# Esto obliga a buscar el archivo en la misma carpeta que app_economia.py
+ruta_logo = os.path.join(os.path.dirname(__file__), 'logo_uhy.png')
+
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # SE USA URL DIRECTA PARA GARANTIZAR VISIBILIDAD
-    st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
+    # Intenta cargar usando la ruta absoluta
+    try:
+        st.image(ruta_logo, use_container_width=True)
+    except:
+        # Si falla (ej: el archivo no está ahi), muestra texto de error discreto o fallback
+        st.write("UHY Macho & Asoc.")
     
     st.markdown(f"### 🌡️ {clima_actual}")
     st.markdown(f"📅 **{datetime.now().strftime('%d/%m/%Y')}**")
@@ -62,8 +71,10 @@ with col_tit:
     st.title("Monitor Económico e Impositivo Integral")
     st.markdown("**Powered by UHY Macho & Asociados**")
 with col_log:
-    # SE USA URL DIRECTA PARA GARANTIZAR VISIBILIDAD
-    st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
+    try:
+        st.image(ruta_logo, use_container_width=True)
+    except:
+        st.write("")
 
 st.markdown("---")
 
