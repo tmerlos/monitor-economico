@@ -5,19 +5,18 @@ from datetime import datetime
 
 st.set_page_config(page_title="Monitor ARCA Senior - Auditoría", layout="wide")
 
-# --- 1. CARGA DE MERCADOS (CORRECCIÓN DE ERROR DINÁMICO) ---
+# --- 1. CARGA DE MERCADOS ---
 @st.cache_data(ttl=600)
 def obtener_datos():
     try:
         res = requests.get("https://dolarapi.com/v1/dolares", timeout=5).json()
-        # Convertimos a diccionario
         return {d['nombre']: d['venta'] for d in res}
     except:
-        return {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00, "Tarjeta": 1935.45}
+        return {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00}
 
 pizarra = obtener_datos()
 
-# --- 2. SIDEBAR CON ÍNDICES CRÍTICOS (CAMBIO: EMPLEO) ---
+# --- 2. SIDEBAR CON ÍNDICES CRÍTICOS (ACTUALIZADO) ---
 with st.sidebar:
     st.image("https://flagcdn.com/w160/ar.png", width=100)
     st.title("Panel de Control Senior")
@@ -25,11 +24,12 @@ with st.sidebar:
     st.divider()
     
     st.markdown("### 🔍 Índices Críticos")
-    st.metric("Riesgo País", "785 bps", "-12")
+    # Riesgo País actualizado a tendencia real de diciembre
+    st.metric("Riesgo País", "754 bps", "-31", delta_color="normal") 
+    st.metric("Merval (Cierre)", "2.140.580", "▲ 2.4%", delta_color="normal")
+    st.metric("Balanza Comercial", "USD +2.498M", "Superávit")
+    st.metric("Tasa Desempleo", "6.6%", "Estable")
     st.metric("Reservas Netas", "USD 31.2B", "+450M")
-    st.metric("Tasa de Empleo", "44.6%", "+0.4%") # Nuevo índice solicitado
-    st.metric("Índice CAC (Construc.)", "+4.2% mensual")
-    st.metric("UVA (Valor Hoy)", "$1.245,60")
     
     st.divider()
     if st.button("🔄 Sincronizar Sistemas"):
@@ -41,8 +41,7 @@ col_flag, col_title = st.columns([1, 15])
 with col_flag: st.image("https://flagcdn.com/w80/ar.png", width=70)
 with col_title: st.title("Monitor Económico e Impositivo Integral")
 
-# --- 4. TIPOS DE CAMBIO (SOLUCIÓN AL INDEXERROR) ---
-# Creamos dinámicamente el número de columnas según la cantidad de dólares recibidos
+# --- 4. TIPOS DE CAMBIO DINÁMICOS ---
 cols = st.columns(len(pizarra))
 for i, (n, v) in enumerate(pizarra.items()):
     with cols[i]: 
@@ -107,9 +106,8 @@ st.table(df_inf.style.format({"IPC (%)": "{:.1f}%", "Acumulada (%)": "{:.1f}%"})
 
 st.divider()
 
-# --- 8. GANANCIAS SOCIEDADES (101.6M) ---
+# --- 8. GANANCIAS SOCIEDADES ($101.6M) ---
 st.subheader("🏢 Ganancias: Personas Jurídicas (Sociedades)")
-
 data_soc = {
     "Tramo Ganancia Neta": ["Hasta $101.679.575,26", "De $101.679.575,26 a $1.016.795.752,60", "Más de $1.016.795.752,60"],
     "Alícuota": ["25%", "30%", "35%"],
@@ -134,7 +132,7 @@ st.divider()
 # --- 10. RG 830: RETENCIONES (ENAJENACIÓN CORREGIDA $224k) ---
 st.subheader("📋 Retenciones Ganancias: RG 830")
 data_rg = {
-    "Concepto": ["Enajenación Bienes Muebles", "Locaciones de Obra/Servicios", "Honorarios Profesionales", "Comisiones", "Alquileres"],
+    "Concepto": ["Enajenación Bien Mueble", "Locaciones de Obra/Servicios", "Honorarios Profesionales", "Comisiones", "Alquileres"],
     "Mínimo No Sujeto ($)": ["224.000,00", "98.240,00", "98.240,00", "45.100,00", "16.360,00"],
     "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94", "3,0%", "6,0%"],
     "No Insc. (%)": ["25%", "28%", "28%", "28%", "28%"]
