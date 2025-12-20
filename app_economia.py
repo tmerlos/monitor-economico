@@ -21,6 +21,17 @@ def obtener_pizarra():
         return {"Oficial": 1030.5, "Blue": 1485.0, "MEP": 1496.8, "CCL": 1555.0, "Tarjeta": 1935.45}
 
 pizarra = obtener_pizarra()
+Dólar oficial fin de mes
+# -------------------------------
+def get_dolar_fin_mes():
+    url = "https://www.cotizacion-dolar.com.ar/dolar-historico-bna-2025.php"
+    resp = safe_get(url)
+    dfs = pd.read_html(resp.text)
+    df = dfs[0]
+    df.columns = [c.strip() for c in df.columns]
+    return df.to_dict(orient="records")
+
+
 
 # --- 2. SIDEBAR ---
 with st.sidebar:
@@ -129,3 +140,4 @@ data_rg = {
     "Alícuota Inscriptos": ["2%", "2%", "Escala Art. 94", "6%"]
 }
 st.table(pd.DataFrame(data_rg))
+
