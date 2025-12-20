@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 
-st.set_page_config(page_title="Monitor Económico, Impositivo y FCI", layout="wide")
+st.set_page_config(page_title="Monitor Económico Real 2025", layout="wide")
 
 # --- 1. VALORES DE RESPALDO (Sábado 20 de Dic 2025) ---
 VALORES_BACKUP = {
@@ -39,8 +39,8 @@ st.success(f"🏛️ **Dólar Oficial BCRA: ${pizarra['Oficial']:,.2f}**")
 
 st.divider()
 
-# --- 4. PIZARRA DE COTIZACIONES ---
-st.subheader("💵 Todos los Tipos de Cambio")
+# --- 4. PIZARRA DE COTIZACIONES (DÓLARES) ---
+st.subheader("💵 Tipos de Cambio del Día")
 cols = st.columns(6)
 nombres = ["Blue", "MEP", "CCL", "Tarjeta", "Cripto", "Oficial"]
 for i, n in enumerate(nombres):
@@ -49,14 +49,28 @@ for i, n in enumerate(nombres):
 
 st.divider()
 
-# --- 5. RENDIMIENTOS FCI (GALICIA Y SANTANDER) Y TASAS ---
+# --- 5. PANEL DE 12 NOTICIAS (SUBIDO AQUÍ) ---
+st.subheader("📰 Actualidad Económica e Impositiva")
+col_e, col_i = st.columns(2)
+with col_e:
+    st.markdown("**📈 Economía**")
+    for n in ["Reservas: Compras por USD 180M.", "Superávit Comercial: USD 1.200M.", "Riesgo País: 790 puntos.", "Consumo: Suba del 2%.", "Cosecha: Récord de soja.", "Tasas: BCRA estable en 40%."]:
+        st.write(f"• {n}")
+with col_i:
+    st.markdown("**⚖️ Impositivas (AFIP)**")
+    for n in ["Monotributo: Nuevas tablas 2026.", "Ganancias: Ajuste RIPTE.", "Bienes Personales: Prórroga anticipo.", "Facturación: Nuevos controladores.", "Exportación: Baja de retenciones.", "Moratoria: Últimos días."]:
+        st.write(f"• {n}")
+
+st.divider()
+
+# --- 6. RENDIMIENTOS FCI Y TASAS ---
 st.subheader("🏦 Rendimientos y Tasas Financieras")
 c1, c2, c3 = st.columns(3)
 with c1:
     st.info("### 💰 Fondos Money Market")
     st.write("**Fima Premium (Galicia):** 34.5% TNA")
     st.write("**Superfondo Ahorro (Santander):** 34.2% TNA")
-    st.caption("Rendimientos promedio a la vista (disponibilidad 24/7).")
+    st.caption("Rendimientos promedio a la vista.")
 with c2:
     st.info("### 🏦 Plazos Fijos")
     st.write("**TNA Promedio Bancos:** 38.0% - 41.0%")
@@ -68,38 +82,14 @@ with c3:
 
 st.divider()
 
-# --- 6. TABLA DE RETENCIONES RG 830 (GANANCIAS) ---
+# --- 7. TABLA DE RETENCIONES RG 830 ---
 st.subheader("⚖️ Régimen de Retención Ganancias - RG 830")
-st.caption("Principales conceptos y alícuotas para sujetos inscriptos.")
-
 data_rg830 = {
-    "Concepto de Pago": [
-        "Enajenación de Bienes Muebles",
-        "Locaciones de Obra y Servicios",
-        "Comisiones y otras retribuciones",
-        "Honorarios Profesionales",
-        "Alquileres de Bienes Inmuebles",
-        "Intereses de Préstamos"
-    ],
+    "Concepto de Pago": ["Bienes Muebles", "Locaciones de Servicios", "Comisiones", "Honorarios Prof.", "Alquileres Inmuebles", "Intereses Préstamos"],
     "Mínimo No Sujeto ($)": ["224.000", "67.000", "31.000", "67.000", "11.200", "Sin mínimo"],
     "Alícuota Inscriptos (%)": ["2%", "2%", "3%", "Escala Art. 94", "6%", "6%"]
 }
 st.table(pd.DataFrame(data_rg830))
-st.info("⚠️ Nota: Para sujetos **no inscriptos**, la alícuota general suele ser del 10% al 28% sin mínimo exento.")
-
-st.divider()
-
-# --- 7. PANEL DE 12 NOTICIAS ---
-st.subheader("📰 Actualidad del Día")
-col_e, col_i = st.columns(2)
-with col_e:
-    st.markdown("**📈 Economía**")
-    for n in ["Reservas: Compras por USD 180M.", "Superávit Comercial: USD 1.200M.", "Riesgo País: 790 puntos.", "Consumo: Suba del 2%.", "Cosecha: Récord de soja.", "Tasas: BCRA estable en 40%."]:
-        st.write(f"• {n}")
-with col_i:
-    st.markdown("**⚖️ Impositivas (AFIP)**")
-    for n in ["Monotributo: Nuevas tablas 2026.", "Ganancias: Ajuste RIPTE.", "Bienes Personales: Prórroga anticipo.", "Facturación: Nuevos controladores.", "Exportación: Baja de retenciones.", "Moratoria: Últimos días."]:
-        st.write(f"• {n}")
 
 st.divider()
 
