@@ -32,11 +32,11 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # Intenta cargar el logo local, si no muestra texto
+    # Logo en sidebar (opcional, como respaldo)
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
-        st.write("### UHY Macho & Asoc.")
+        pass
     
     st.markdown(f"### 🌡️ {clima_actual}")
     st.markdown(f"📅 **{datetime.now().strftime('%d/%m/%Y')}**")
@@ -54,17 +54,17 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- 4. ENCABEZADO Y LOGO ---
+# --- 4. ENCABEZADO Y LOGO (DERECHA) ---
 col_tit, col_log = st.columns([5, 1])
 with col_tit:
     st.title("Monitor Económico e Impositivo Integral")
     st.markdown("**Powered by UHY Macho & Asociados**")
 with col_log:
-    # Logo en la esquina derecha también (opcional, o solo en sidebar)
+    # Logo arriba a la derecha
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
-        pass
+        st.write("UHY Logo")
 
 st.markdown("---")
 
@@ -256,16 +256,17 @@ c_usa, c_prov = st.columns(2)
 with c_usa:
     with st.container(border=True):
         st.subheader("🇺🇸 US Tax Update (Dec 2025)")
+        st.markdown("**📍 Estados Unidos**")
         st.info("""
-        **IRS Enforcement on Form 1099-K**
-        The IRS confirmed the **$600 threshold** is active for 2025 returns.
-        * **Impact:** Third-party settlement organizations must report gross payments > $600.
-        * **Action:** Reconcile US-source income for LLCs.
+        * **IRS Enforcement:** The $600 threshold for Form 1099-K is confirmed for 2025 returns.
+        * **Impact:** High visibility on digital payments (PayPal, Stripe).
+        * **Deadline:** Check filings for LLCs before Jan 2026.
         """)
 
 with c_prov:
     with st.container(border=True):
-        st.subheader("🇦🇷 Novedades Provinciales (Dic 2025)")
+        # Título sin "AR" según solicitud
+        st.subheader("Novedades Provinciales (Dic 2025)")
         
         st.markdown("**📍 Provincia de Santa Fe**")
         st.success("""
