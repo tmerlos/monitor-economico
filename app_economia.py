@@ -19,8 +19,6 @@ pizarra = obtener_mercados()
 # --- 2. SIDEBAR E INDICES ---
 with st.sidebar:
     st.image("https://flagcdn.com/w160/ar.png", width=100)
-    
-    # Versión simplificada del cuadro de fecha para evitar el TypeError
     st.sidebar.markdown(f"### 📅 {datetime.now().strftime('%d/%m/%Y')}")
     st.sidebar.info("**ESTADO: CONTROL DE AUDITORÍA**")
     
@@ -60,9 +58,36 @@ with col_imp:
 
 st.divider()
 
-# --- 5. CUADROS DE IMPUESTOS (AUDITADOS) ---
-st.subheader("📊 Herramientas de Liquidación Auditadas")
-t_4ta, t_deduc, t_soc, t_mon, t_tasas = st.tabs(["Ganancias 4ta Cat (Art. 94)", "Deducciones 2025", "Sociedades", "Monotributo", "Rendimientos"])
+# --- 5. INDICADORES ECONÓMICOS (TABS SOLICITADOS) ---
+st.subheader("📈 Indicadores Económicos")
+tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas de Interés", "📊 Inflación (Mensual y Acumulada)"])
+
+with tab_tasas:
+    ta, tp = st.columns(2)
+    with ta:
+        st.error("#### Activas (Costo)")
+        st.write("• **Adelanto Cta Cte:** 62.0% TNA")
+        st.write("• **Descuento Cheques:** 48.0% TNA")
+        st.write("• **Tarjetas de Crédito:** 122.0% TNA")
+    with tp:
+        st.success("#### Pasivas (Rendimiento)")
+        st.write("• **Plazo Fijo Minorista:** 39.0% TNA")
+        st.write("• **FCI Money Market (Fima):** 34.2% TNA")
+        st.write("• **Tasa Badlar:** 42.8% TNA")
+
+with tab_inflacion:
+    df_inf = pd.DataFrame({
+        "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Dic (Est)"],
+        "IPC Mensual (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5, 2.3]
+    })
+    df_inf['IPC Acumulado (%)'] = ((1 + df_inf['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
+    st.table(df_inf.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)": "{:.1f}%"}))
+
+st.divider()
+
+# --- 6. CUADROS DE IMPUESTOS (AUDITADOS) ---
+st.subheader("📊 Cuadros de Impuestos")
+t_4ta, t_deduc, t_soc, t_mon = st.tabs(["Ganancias 4ta Cat (Art. 94)", "Deducciones 2025", "Sociedades", "Monotributo"])
 
 with t_4ta:
     st.markdown("#### Escala Impositiva Art. 94 LIG - Período Fiscal 2025")
@@ -98,25 +123,14 @@ with t_soc:
 with t_mon:
     df_mono = pd.DataFrame({
         "Cat": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-        "Ingresos Anuales ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
-        "Cuota Mensual ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
+        "Ingresos Brutos ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
+        "Cuota Total ($)": ["37k", "42k", "49k", "63k", "81k", "104k", "127k", "244k", "302k", "359k", "428k"]
     })
     st.table(df_mono)
 
-with t_tasas:
-    ta, tp = st.columns(2)
-    with ta:
-        st.error("#### Activas (Costo)")
-        st.write("• **Adelanto Cta Cte:** 62.0% TNA")
-        st.write("• **Descuento Cheques:** 48.0% TNA")
-    with tp:
-        st.success("#### Pasivas (Ahorro)")
-        st.write("• **Plazo Fijo Minorista:** 39.0% TNA")
-        st.write("• **Tasa Badlar:** 42.8% TNA")
-
 st.divider()
 
-# --- 6. BOLETÍN OFICIAL ---
+# --- 7. BOLETÍN OFICIAL ---
 st.subheader("📜 Boletín Oficial: Verificación de Resoluciones")
 def get_bo_normas():
     return [
