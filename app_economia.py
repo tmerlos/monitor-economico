@@ -22,19 +22,31 @@ def obtener_datos():
         res = requests.get("https://dolarapi.com/v1/dolares/mayorista", timeout=2).json()
         bcra_val = res['venta']
         res_m = requests.get("https://dolarapi.com/v1/dolares", timeout=2).json()
-        return bcra_val, res_m
+        # Filtrar solo los que queremos mostrar en la pizarra principal
+        nombres_interes = ["Oficial", "Blue", "MEP", "CCL", "Tarjeta"]
+        pizarra_filtrada = [d for d in res_m if d['nombre'] in nombres_interes]
+        return bcra_val, pizarra_filtrada
     except:
         return VALORES_BCRA_HOY, VALORES_MERCADO_HOY
 
 val_oficial, pizarra = obtener_datos()
 
-# --- 3. ENCABEZADO ---
+# --- 3. ENCABEZADO Y ALERTA OFICIAL ---
 st.title("🇦🇷 Monitor Económico, Impositivo y Financiero")
 st.success(f"🏛️ **Dólar Oficial BCRA (Referencia A3500): ${val_oficial:,.2f}**")
 
 st.divider()
 
-# --- 4. TASAS Y FONDOS FIMA ---
+# --- 4. PIZARRA DE COTIZACIONES (AHORA ARRIBA) ---
+st.subheader("💵 Pizarra de Cotizaciones del Día")
+cols_piz = st.columns(len(pizarra))
+for i, d in enumerate(pizarra):
+    with cols_piz[i]:
+        st.metric(label=f"Dólar {d['nombre']}", value=f"${d.get('venta', 0):,.2f}")
+
+st.divider()
+
+# --- 5. TASAS DE INTERÉS Y FONDOS FIMA ---
 st.subheader("🏦 Rendimientos y Tasas de Referencia")
 c1, c2, c3 = st.columns(3)
 with c1:
@@ -52,35 +64,42 @@ with c3:
 
 st.divider()
 
-# --- 5. PANEL DE 12 NOTICIAS ---
+# --- 6. PANEL DE 12 NOTICIAS ---
 st.subheader("📰 Actualidad Económica e Impositiva")
 col_e, col_i = st.columns(2)
 with col_e:
     st.markdown("**📈 Economía**")
-    for n in ["Reservas: Compras por USD 180M.", "Superávit Comercial: USD 1.200M.", "Riesgo País: 790 puntos.", "Consumo: Suba del 2%.", "Cosecha: Récord de soja.", "Tasas: BCRA estable en 40%."]:
-        st.write(f"• {n}")
+    noticias_e = [
+        "Reservas: El BCRA cerró la semana con compras por USD 180M.",
+        "Balanza Comercial: Superávit de USD 1.200M registrado en el último mes.",
+        "Riesgo País: Estabilizado en 790 puntos tras el pago de cupones.",
+        "Consumo: Ventas navideñas muestran un repunte del 2% en volumen.",
+        "Cosecha: Estimaciones de la Bolsa de Cereales prevén récord de soja.",
+        "Tasas: El mercado espera que el BCRA mantenga la tasa de pases en 40%."
+    ]
+    for n in noticias_e: st.write(f"• {n}")
 with col_i:
     st.markdown("**⚖️ Impositivas (AFIP)**")
-    for n in ["Monotributo: Nuevas tablas 2026.", "Ganancias: Ajuste RIPTE.", "Bienes Personales: Prórroga anticipo.", "Facturación: Nuevos controladores.", "Exportación: Baja de retenciones.", "Moratoria: Últimos días."]:
-        st.write(f"• {n}")
+    noticias_i = [
+        "Monotributo: Publicadas las nuevas tablas de enero 2026.",
+        "Ganancias: Actualización de deducciones personales por índice RIPTE.",
+        "Bienes Personales: Confirmada la prórroga para el pago del anticipo.",
+        "Facturación: Nuevos controladores fiscales obligatorios para PyMEs.",
+        "Exportación: Reducción de retenciones para productos regionales.",
+        "Moratoria: Últimos días para la adhesión con condonación de multas."
+    ]
+    for n in noticias_i: st.write(f"• {n}")
 
 st.divider()
 
-# --- 6. PIZARRA DE DIVISAS ---
-st.subheader("💵 Pizarra de Cotizaciones")
-cols = st.columns(len(pizarra))
-for i, d in enumerate(pizarra):
-    with cols[i]:
-        st.metric(label=f"Dólar {d['nombre']}", value=f"${d.get('venta', 0):,.2f}")
-
-st.divider()
-
-# --- 7. INFLACIÓN (DATOS CORRECTOS) ---
+# --- 7. HISTORIAL INFLACIÓN (DATOS EXACTOS) ---
 st.subheader("📊 Historial de Inflación INDEC 2025")
 df = pd.DataFrame({
     "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"],
     "IPC Mensual (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5],
 })
 df['IPC Acumulado (%)'] = ((1 + df['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
+
 st.dataframe(df.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)": "{:.1f}%"}), use_container_width=True)
-st.info(f"📊 **Inflación Acumulada Anual:** {df['IPC Acumulado (%)'].iloc[-1]:.1f}%")
+
+st.info(f"📊 **Inflación Acumulada Anual (Ene-Nov):** {df['IPC Acumulado (%)'].iloc[-1]:.1f}%")
