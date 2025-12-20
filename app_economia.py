@@ -16,15 +16,23 @@ def obtener_datos():
     except:
         pizarra = {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00}
     
-    # Clima (Open-Meteo)
+    # Clima Geolocalizado (Usuario)
     try:
-        url_w = "https://api.open-meteo.com/v1/forecast?latitude=-34.61&longitude=-58.38&current_weather=true&hourly=precipitation_probability"
-        res_w = requests.get(url_w).json()
+        # 1. Obtener lat/lon aproximada de la IP del usuario
+        loc = requests.get("http://ip-api.com/json/", timeout=3).json()
+        lat, lon, ciudad = loc['lat'], loc['lon'], loc['city']
+        
+        # 2. Consultar clima para esa ubicación
+        url_w = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=precipitation_probability"
+        res_w = requests.get(url_w, timeout=3).json()
+        
         temp = res_w['current_weather']['temperature']
+        # Probabilidad de lluvia hora actual
         prob = res_w['hourly']['precipitation_probability'][datetime.now().hour]
-        clima = f"{temp}°C - CABA (Lluvia: {prob}%)"
+        
+        clima = f"{temp}°C - {ciudad} (Lluvia: {prob}%)"
     except:
-        clima = "27°C - CABA"
+        clima = "24°C - Ubicación n/d (Lluvia: --%)"
         
     return pizarra, clima
 
@@ -32,11 +40,11 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # Logo en sidebar (opcional, como respaldo)
+    # Intenta cargar logo local, sino usa URL oficial de respaldo
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
-        pass
+        st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
     
     st.markdown(f"### 🌡️ {clima_actual}")
     st.markdown(f"📅 **{datetime.now().strftime('%d/%m/%Y')}**")
@@ -64,7 +72,7 @@ with col_log:
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
-        st.write("UHY Logo")
+        st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
 
 st.markdown("---")
 
@@ -255,17 +263,18 @@ c_usa, c_prov = st.columns(2)
 
 with c_usa:
     with st.container(border=True):
-        st.subheader("🇺🇸 US Tax Update (Dec 2025)")
-        st.markdown("**📍 Estados Unidos**")
+        # Título ajustado: "Tax Update" (sin "US")
+        st.subheader("🇺🇸 Tax Update (Dec 2025)")
+        st.markdown("**IRS Enforcement on Form 1099-K**")
         st.info("""
-        * **IRS Enforcement:** The $600 threshold for Form 1099-K is confirmed for 2025 returns.
-        * **Impact:** High visibility on digital payments (PayPal, Stripe).
-        * **Deadline:** Check filings for LLCs before Jan 2026.
+        The IRS confirmed the **$600 threshold** for Form 1099-K is effective for 2025 returns.
+        * **Impact:** Third-party settlement organizations must report gross payments > $600.
+        * **Action:** Reconcile US-source income for LLCs.
+        * **Deadline:** Check filings before Jan 2026.
         """)
 
 with c_prov:
     with st.container(border=True):
-        # Título sin "AR" según solicitud
         st.subheader("Novedades Provinciales (Dic 2025)")
         
         st.markdown("**📍 Provincia de Santa Fe**")
