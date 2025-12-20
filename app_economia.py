@@ -44,7 +44,7 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. NOTICIAS Y ALERTAS (RESTAURADO) ---
+# --- 5. NOTICIAS Y ALERTAS ---
 st.subheader("📰 Actualidad y Alertas del Día")
 ce, ci = st.columns(2)
 with ce:
@@ -72,7 +72,7 @@ with ci:
 
 st.divider()
 
-# --- 6. CUADROS DE IMPUESTOS (SET COMPLETO) ---
+# --- 6. CUADROS DE IMPUESTOS ---
 st.subheader("📊 Cuadros de Impuestos")
 t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo 2025", "RG 830"])
 
@@ -107,15 +107,19 @@ st.subheader("📈 Rendimientos e Inflación")
 tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas de Interés", "📊 Inflación INDEC"])
 
 with tab_tasas:
-    t1, t2 = st.columns(2)
-    with t1:
-        st.info("### 💰 Fondos y Bancos")
-        st.write("**Fima Premium (Santander):** 34.20% TNA")
-        st.write("**Santander Plazo Fijo:** 39.00% TNA")
-    with t2:
-        st.warning("### 🏦 Referencias")
-        st.write("**Tasa Badlar:** 42.80% TNA")
-        st.write("**Tasa TM20:** 41.10% TNA")
+    t_pasiva, t_activa = st.columns(2)
+    with t_pasiva:
+        st.success("### 🔽 Tasas Pasivas (Depósitos)")
+        st.write("**Plazo Fijo Minorista:** 37.0% - 39.0% TNA")
+        st.write("**FCI Money Market (Fima):** 34.20% TNA")
+        st.write("**Tasa Badlar (Bancos Privados):** 42.80% TNA")
+        st.caption("Remuneración para el ahorrista/inversor.")
+    with t_activa:
+        st.error("### 🔼 Tasas Activas (Préstamos)")
+        st.write("**Adelanto Cuenta Corriente:** 58.0% - 65.0% TNA")
+        st.write("**Préstamos Personales:** 72.0% - 88.0% TNA")
+        st.write("**Financiación Tarjetas (Ley):** 122.0% TNA")
+        st.caption("Costo financiero para empresas y personas.")
 
 with tab_inflacion:
     df_inf = pd.DataFrame({
@@ -124,24 +128,3 @@ with tab_inflacion:
     })
     df_inf['IPC Acumulado (%)'] = ((1 + df_inf['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
     st.table(df_inf.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)": "{:.1f}%"}))
-
-st.divider()
-
-# --- 8. RADAR DE SEGUIMIENTO (AL FINAL Y CONDICIONAL) ---
-# Lógica: Solo muestra si hay novedades (Simulado en True para esta entrega)
-novedades_detectadas = True 
-
-if novedades_detectadas:
-    st.subheader("📡 Radar de Alertas: Menciones Nuevas")
-    def link_google(q): return f"https://www.google.com/search?q={q.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
-    
-    ca, cb = st.columns(2)
-    with ca:
-        st.info("### 👤 Firma y Socios")
-        st.markdown(f"• [Menciones: **UHY Macho Argentina**]({link_google('UHY Macho Argentina')})")
-        st.markdown(f"• [Menciones: **Roberto E. Macho**]({link_google('Roberto E. Macho')})")
-        st.markdown(f"• [Seguimiento: **Tomás Merlos**]({link_google('Tomás Merlos UHY')})")
-    with cb:
-        st.warning("### 🏢 Corporativo")
-        st.markdown(f"• [Radar: **Novomatic Argentina**]({link_google('Novomatic Argentina')})")
-        st.markdown(f"• [Radar: **Octavian Argentina**]({link_google('Octavian Argentina')})")
