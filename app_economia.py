@@ -16,10 +16,10 @@ def obtener_datos():
     except:
         pizarra = {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00}
     
-    # Clima CABA (Fijo)
+    # Clima CABA (Fijo: Ciudad de Buenos Aires)
     try:
-        # Coordenadas de Buenos Aires
-        lat, lon = -34.61, -58.38
+        # Coordenadas exactas del Obelisco
+        lat, lon = -34.6037, -58.3816
         url_w = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=precipitation_probability"
         res_w = requests.get(url_w, timeout=3).json()
         
@@ -37,14 +37,11 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # INTENTO DE CARGA DE LOGO
-    # 1. Busca el archivo local 'logo_uhy.png'
-    # 2. Si no está, intenta cargar desde la web oficial
+    # Carga del Logo desde el archivo local en el repositorio
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
-        # Link de respaldo oficial
-        st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
+        st.error("Archivo logo_uhy.png no encontrado")
     
     st.markdown(f"### 🌡️ {clima_actual}")
     st.markdown(f"📅 **{datetime.now().strftime('%d/%m/%Y')}**")
@@ -71,7 +68,7 @@ with col_log:
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
-        st.image("https://www.uhy.com/themes/custom/uhy_theme/logo.svg", use_container_width=True)
+        st.write("") # Espacio vacío si falla
 
 st.markdown("---")
 
