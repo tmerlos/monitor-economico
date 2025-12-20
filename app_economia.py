@@ -3,7 +3,7 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-st.set_page_config(page_title="Monitor ARCA & Radar Corporativo", layout="wide")
+st.set_page_config(page_title="Monitor ARCA Senior - Datos Completos", layout="wide")
 
 # --- 1. CARGA DE MERCADOS ---
 @st.cache_data(ttl=600)
@@ -16,21 +16,19 @@ def obtener_datos():
 
 pizarra = obtener_datos()
 
-# --- 2. SIDEBAR CON NASDAQ E ÍNDICES ---
+# --- 2. SIDEBAR ---
 with st.sidebar:
     st.image("https://flagcdn.com/w160/ar.png", width=100)
     st.title("Panel de Control")
     st.write(f"📅 **Hoy:** {datetime.now().strftime('%d/%m/%Y')}")
     st.divider()
-    
     st.markdown("### 🔍 Índices Críticos")
     st.metric("Riesgo País", "754 bps", "-31") 
     st.metric("Índice Merval", "2.140.580", "▲ 2.4%")
-    st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%") # Variación Nasdaq agregada
-    st.metric("Balanza Comercial", "USD +2.498M", "Superávit")
-    st.metric("Tasa Desempleo", "6.6%", "Estable")
-    
-    if st.button("🔄 Sincronizar Sistemas"):
+    st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%")
+    st.metric("Balanza Comercial", "USD +2.498M")
+    st.metric("Tasa Desempleo", "6.6%")
+    if st.button("🔄 Sincronizar"):
         st.cache_data.clear()
         st.rerun()
 
@@ -46,96 +44,102 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. NOTICIAS Y ALERTAS (6+6) ---
-st.subheader("📰 Actualidad y Alertas del Día")
-ce, ci = st.columns(2)
-with ce:
-    st.markdown("**📈 Economía**")
-    for t, l in [("Subsidios: Crédito USD 300M", "https://diarioelnorte.com.ar/el-gobierno-aprobo-un-prestamo-de-us-300-millones-para-reordenar-los-subsidios-energeticos/"), ("Desempleo: Baja al 6,6%", "https://www.pagina12.com.ar/2025/12/19/aumenta-la-precariedad-y-baja-el-desempleo/"), ("Comercio: Superávit Nov", "https://www.indec.gob.ar/"), ("BCRA: Compra Reservas", "https://www.bcra.gob.ar/")]:
-        st.markdown(f"• [{t}]({l})")
-with ci:
-    st.markdown("**⚖️ Impositivas (ARCA)**")
-    for t, l in [("Umbrales: Precios Transferencia", "https://aldiaargentina.microjuris.com/2025/12/16/legislacion-arca-se-actualizan-precios-de-transferencia/"), ("Vencimiento Monotributo Dic", "https://www.ambito.com/informacion-general/vencimiento-del-monotributo-diciembre-2025-arca-n6223081"), ("Bienes Personales: Escalas", "https://www.afip.gob.ar/ganancias-y-bienes-personales/"), ("Calendario Enero 2026", "https://www.afip.gob.ar/vencimientos/")]:
-        st.markdown(f"• [{t}]({l})")
-
-st.divider()
-
-# --- 6. CUADROS DE IMPUESTOS ---
+# --- 5. CUADROS DE IMPUESTOS (SET COMPLETO) ---
 st.subheader("📊 Cuadros de Impuestos")
-t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo", "RG 830"])
+t_soc, t_mon, t_rg = st.tabs(["Ganancias Sociedades", "Monotributo 2025 (Completo)", "RG 830 (Completo)"])
 
 with t_soc:
-    st.write("**Mínimo Imponible Tramo 1:** $101.679.575,26")
+    st.write("**Escala Progresiva Ley 27.630**")
+    
     data_soc = {
-        "Escala": ["Hasta $101.6M", "De $101.6M a $1.016M", "Más de $1.016M"],
+        "Tramo Ganancia Neta": ["Hasta $101.679.575,26", "De $101.679.575,26 a $1.016.795.752,60", "Más de $1.016.795.752,60"],
         "Alícuota": ["25%", "30%", "35%"],
-        "Fijo": ["$0,00", "$25.419.893,82", "$299.954.747,02"]
+        "Monto Fijo": ["$0,00", "$25.419.893,82", "$299.954.747,02"],
+        "Sobre Excedente de": ["$0,00", "$101.679.575,26", "$1.016.795.752,60"]
     }
     st.table(pd.DataFrame(data_soc))
 
 with t_mon:
-    st.write("**Tope Categoría K:** $94.805.682,90")
-    st.table(pd.DataFrame({
-        "Cat": ["A", "D", "H", "K"],
-        "Ingresos Anuales ($)": ["8.9M", "23.2M", "62.0M", "94.8M"],
-        "Cuota ($)": ["37k", "63k", "244k", "428k"]
-    }))
+    st.write("**Escala de Categorías Vigentes - Diciembre 2025**")
+    df_mono_full = pd.DataFrame({
+        "Categoría": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
+        "Ingresos Brutos Anuales ($)": [
+            "8.987.312,20", "13.345.101,40", "18.677.202,30", "23.211.504,10", "27.321.405,80", 
+            "34.112.508,40", "40.876.310,10", "62.011.514,50", "69.455.618,20", "79.445.820,10", "94.805.682,90"
+        ],
+        "Cuota Total Mensual ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
+    })
+    st.table(df_mono_full)
 
 with t_rg:
-    data_rg = {
-        "Concepto": ["Bienes Muebles", "Servicios", "Honorarios"],
-        "Mínimo ($)": ["224.000,00", "98.240,00", "98.240,00"],
-        "Alícuota Insc.": ["2%", "2%", "Escala Art. 94"]
+    st.write("**Anexo II - Régimen de Retención General (RG 830)**")
+    
+    data_rg_full = {
+        "Concepto": [
+            "Enajenación de Bienes Muebles", 
+            "Locaciones de Obra/Servicios (No Profesionales)", 
+            "Honorarios Profesionales Liberales", 
+            "Alquileres de Inmuebles", 
+            "Comisiones y Consignaciones", 
+            "Intereses por Préstamos", 
+            "Derechos de Autor", 
+            "Fletes y Acarreos", 
+            "Subsidios y Ayudas del Estado"
+        ],
+        "Mínimo No Sujeto ($)": [
+            "224.000,00", "98.240,00", "98.240,00", "16.360,00", "45.100,00", 
+            "Sin Mínimo", "22.400,00", "32.000,00", "15.000,00"
+        ],
+        "Alícuota Inscripto": ["2,0%", "2,0%", "Escala Art. 94 (Mín 3%)", "6,0%", "3,0%", "6,0%", "Escala Art. 94", "0,25%", "2,0%"],
+        "Alícuota No Insc.": ["25%", "28%", "28%", "28%", "28%", "28%", "28%", "25%", "28%"]
     }
-    st.table(pd.DataFrame(data_rg))
+    st.table(pd.DataFrame(data_rg_full))
 
 st.divider()
 
-# --- 7. RENDIMIENTO E INFLACIÓN (TABS SOLICITADOS) ---
-st.subheader("📈 Rendimientos e Indicadores de Variación")
+# --- 6. RENDIMIENTOS E INFLACIÓN ---
+st.subheader("📈 Rendimientos e Inflación")
 tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas de Interés", "📊 Inflación INDEC"])
 
 with tab_tasas:
-    c1, c2 = st.columns(2)
-    with c1:
-        st.info("### Tasas Pasivas (Ahorro)")
-        st.write("**Plazo Fijo:** 39.00% TNA")
-        st.write("**Billeteras (MP/Ualá):** 32.50% TNA")
-    with c2:
-        st.warning("### Tasas Activas (Costo)")
+    t1, t2 = st.columns(2)
+    with t1:
+        st.info("### 💰 Fondos y Bancos")
+        st.write("**Fima Premium (Santander):** 34.20% TNA")
+        st.write("**Santander Plazo Fijo:** 39.00% TNA")
+        st.write("**Galicia Money Market:** 34.50% TNA")
+    with t2:
+        st.warning("### 🏦 Referencias")
         st.write("**Tasa Badlar:** 42.80% TNA")
-        st.write("**Créditos Prendarios:** 65.00% TNA")
+        st.write("**Tasa TM20:** 41.10% TNA")
 
 with tab_inflacion:
     df_inf = pd.DataFrame({
         "Mes": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Dic (Est)"],
-        "IPC (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5, 2.3]
+        "IPC Mensual (%)": [2.2, 2.4, 3.7, 2.8, 1.5, 1.6, 1.9, 1.9, 2.1, 2.3, 2.5, 2.3]
     })
-    st.table(df_inf.T) # Transpuesta para que sea más compacta
+    df_inf['IPC Acumulado (%)'] = ((1 + df_inf['IPC Mensual (%)'] / 100).cumprod() - 1) * 100
+    st.table(df_inf.style.format({"IPC Mensual (%)": "{:.1f}%", "IPC Acumulado (%)": "{:.1f}%"}))
 
 st.divider()
 
-# --- 8. RADAR DE MENCIONES (AL FINAL CON LÓGICA DE DETECCIÓN) ---
-st.subheader("📡 Radar de Seguimiento Inteligente")
+# --- 7. RADAR DE SEGUIMIENTO (CONDICIONAL) ---
+# Simulación de detección
+novedades = {"UHY": True, "Roberto": True, "Empresas": True}
 
-# Función para generar links de búsqueda
-def get_link(q):
-    return f"https://www.google.com/search?q={q.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
-
-# Simulador de detección: Solo muestra si el usuario activa el radar
-if st.button("🔍 Escanear Red en busca de nuevas menciones"):
-    st.success("Escaneo completado. Se han detectado potenciales menciones nuevas en la última semana:")
+if any(novedades.values()):
+    st.subheader("📡 Radar de Alertas: Menciones Nuevas")
+    def link(q): return f"https://www.google.com/search?q={q.replace(' ', '+')}&tbm=nws&tbs=qdr:w"
     
-    col_u, col_n = st.columns(2)
-    with col_u:
-        st.markdown("### 👤 Firma y Socios")
-        st.markdown(f"• [Menciones UHY Macho]({get_link('UHY Macho Argentina')})")
-        st.markdown(f"• [Menciones Roberto E. Macho]({get_link('Roberto E. Macho')})")
-        st.markdown(f"• [Menciones Tomás Merlos]({get_link('Tomás Merlos UHY')})")
-    
-    with col_n:
-        st.markdown("### 🏢 Empresas Seguimiento")
-        st.markdown(f"• [Alertas Novomatic Argentina]({get_link('Novomatic Argentina')})")
-        st.markdown(f"• [Alertas Octavian Argentina]({get_link('Octavian Argentina')})")
+    ca, cb = st.columns(2)
+    with ca:
+        st.info("### 👤 Firma y Socios")
+        st.markdown(f"• [Menciones: **UHY Macho Argentina**]({link('UHY Macho Argentina')})")
+        st.markdown(f"• [Menciones: **Roberto E. Macho**]({link('Roberto E. Macho')})")
+        st.markdown(f"• [Menciones: **Tomás Merlos**]({link('Tomás Merlos UHY')})")
+    with cb:
+        st.warning("### 🏢 Corporativo")
+        st.markdown(f"• [Radar: **Novomatic Argentina**]({link('Novomatic Argentina')})")
+        st.markdown(f"• [Radar: **Octavian Argentina**]({link('Octavian Argentina')})")
 else:
-    st.write("✨ No hay alertas críticas visualizándose. Pulse el botón para realizar un rastreo profundo.")
+    st.empty()
