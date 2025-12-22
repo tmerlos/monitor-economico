@@ -7,36 +7,24 @@ from datetime import datetime
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="Monitor Estratégico UHY 2025", layout="wide")
 
-# --- CSS PERSONALIZADO (PANTONE 3302 Y TEXTO BLANCO EN SIDEBAR) ---
+# --- CSS PERSONALIZADO ---
 st.markdown("""
     <style>
-    /* Fondo del Sidebar - Pantone 3302 C aprox (#004B39) */
-    [data-testid="stSidebar"] {
-        background-color: #004B39;
-    }
-    /* Texto blanco en Sidebar */
-    [data-testid="stSidebar"] * {
-        color: #FFFFFF !important;
-    }
-    /* Ajuste para que los inputs o botones dentro del sidebar se vean bien */
-    [data-testid="stSidebar"] .stButton button {
-        color: #004B39 !important;
-        background-color: #FFFFFF !important;
-    }
+    [data-testid="stSidebar"] { background-color: #004B39; }
+    [data-testid="stSidebar"] * { color: #FFFFFF !important; }
+    [data-testid="stSidebar"] .stButton button { color: #004B39 !important; background-color: #FFFFFF !important; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- 2. CARGA DE DATOS ---
 @st.cache_data(ttl=600)
 def obtener_datos():
-    # Divisas
     try:
         res = requests.get("https://dolarapi.com/v1/dolares", timeout=5).json()
         pizarra = {d['nombre']: d['venta'] for d in res}
     except:
         pizarra = {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00}
     
-    # Clima CABA (Fijo)
     try:
         lat, lon = -34.6037, -58.3816
         url_w = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=precipitation_probability"
@@ -64,10 +52,8 @@ with st.sidebar:
     
     st.markdown("### 🔍 Índices Críticos")
     st.metric("Riesgo País", "754 bps", "-31") 
-    
     st.metric("Dólar Futuro (Jun-26)", "$1.410,20", "+1.8%")
     st.metric("Dólar Futuro (Dic-26)", "$1.645,50", "+2.1%")
-    
     st.metric("Índice Merval", "2.140.580", "▲ 2.4%")
     st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%")
     st.metric("Tasa Desempleo", "6.6%")
@@ -200,11 +186,17 @@ with t_soc:
     st.table(df_soc)
 
 with t_mon:
-    st.markdown("#### Monotributo Dic 2025")
+    st.markdown("#### Monotributo Dic 2025 (Valores Completos)")
     df_mono_full = pd.DataFrame({
-        "Cat": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-        "Ingresos Brutos ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
-        "Cuota Total ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
+        "Categoría": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
+        "Ingresos Brutos Anuales ($)": [
+            "8.987.312,20", "13.345.101,40", "18.677.202,30", "23.211.504,10", "27.321.405,80", 
+            "34.112.508,40", "40.876.310,10", "62.011.514,50", "69.455.618,20", "79.445.820,10", "94.805.682,90"
+        ],
+        "Cuota Total Mensual ($)": [
+            "37.085,00", "42.216,00", "49.435,00", "63.357,00", "81.412,00", 
+            "104.256,00", "127.108,00", "244.135,00", "302.510,00", "359.845,00", "428.100,00"
+        ]
     })
     st.table(df_mono_full)
 
@@ -225,7 +217,6 @@ with t_calc:
     c1, c2, c3 = st.columns(3)
     with c1:
         meses = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio", 8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
-        # DEFAULT: INDEX 11 (DICIEMBRE)
         mes_sel = st.selectbox("Mes de Cálculo", list(meses.keys()), index=11, format_func=lambda x: meses[x])
     with c2:
         sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=10000.0, format="%.2f")
@@ -233,93 +224,100 @@ with t_calc:
         sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # --- LÓGICA DE CÁLCULO ---
-    
-    # 1. Base Imponible Máxima para Aportes (CORREGIDA a dato usuario: 3.731.212,01 en Dic 2025)
-    # Calculamos el valor ajustado para el mes seleccionado
-    valor_tope_diciembre = 3731212.01
-    # Asumimos que el valor viene creciendo. Si el usuario selecciona Diciembre, usa exactamente ese valor.
-    # Para meses anteriores, simulamos un valor menor dividiendo por inflación estimada (3.5% mensual)
-    # para mantener coherencia lógica, pero asegurando el valor exacto en Dic.
-    base_max_aportes = valor_tope_diciembre / (1.035**(12 - mes_sel)) 
-
-    # 2. Cálculo de Aportes Mensuales con Tope
-    if sueldo > base_max_aportes:
-        base_calculo_aportes = base_max_aportes
-    else:
-        base_calculo_aportes = sueldo
-    
-    aporte_mensual_17 = base_calculo_aportes * 0.17
-    
-    # 3. Proyección Anualizada (Acumulada al mes)
-    bruto_acumulado = sueldo * mes_sel
-    aportes_acumulados = aporte_mensual_17 * mes_sel
-    
-    if sac:
-        # SAC Proporcional (Bruto)
-        bruto_sac = (sueldo / 12) * mes_sel
-        bruto_acumulado += bruto_sac
+    # --- FUNCIONES DE CÁLCULO ---
+    def calcular_acumulados(mes, sueldo_men, incluye_sac):
+        """Calcula el impuesto acumulado hasta el mes indicado"""
+        if mes < 1: return 0.0
         
-        # Aportes SAC (Con su propio tope al 50%)
-        tope_sac = base_max_aportes / 2
-        sueldo_sac_teorico = sueldo / 2
+        # 1. Base Aportes (Proyección con dato ANSES Diciembre 2025 fijo)
+        valor_tope_diciembre = 3731212.01
+        base_max_aportes = valor_tope_diciembre / (1.035**(12 - mes))
         
-        if sueldo_sac_teorico > tope_sac:
-             base_calculo_sac = tope_sac
-        else:
-             base_calculo_sac = sueldo_sac_teorico
-             
-        # Aporte SAC proporcional acumulado
-        aporte_sac_acumulado = (base_calculo_sac * 0.17 / 12) * mes_sel 
-        aportes_acumulados += aporte_sac_acumulado
+        # 2. Aportes Mensuales (Sueldo mensual vs Tope)
+        base_calc = min(sueldo_men, base_max_aportes)
+        aporte_men = base_calc * 0.17
+        
+        # 3. Acumulación (Asumiendo sueldo constante para proyección)
+        bruto_acum = sueldo_men * mes
+        aportes_acum = aporte_men * mes
+        
+        if incluye_sac:
+            bruto_acum += (sueldo_men / 12) * mes
+            # Tope SAC
+            tope_sac = base_max_aportes / 2
+            base_sac = min(sueldo_men / 2, tope_sac)
+            aporte_sac = (base_sac * 0.17 / 12) * mes
+            aportes_acum += aporte_sac
+            
+        # 4. Deducciones
+        mni = 4093923.60
+        ded_esp = 19650833.28
+        ded_total_acum = ((mni + ded_esp) / 12) * mes
+        
+        # 5. Neto
+        neto = max(0, bruto_acum - ded_total_acum - aportes_acum)
+        
+        # 6. Escala
+        escala = [
+            {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
+            {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
+            {"d": 3273136.72, "h": 4909705.08, "f": 229119.57, "p": 12, "exc": 3273136.72},
+            {"d": 4909705.08, "h": 7364557.62, "f": 425507.77, "p": 15, "exc": 4909705.08},
+            {"d": 7364557.62, "h": 14729115.24, "f": 793735.65, "p": 19, "exc": 7364557.62},
+            {"d": 14729115.24, "h": 22093672.86, "f": 2193001.60, "p": 23, "exc": 14729115.24},
+            {"d": 22093672.86, "h": 33140509.29, "f": 3886949.85, "p": 27, "exc": 22093672.86},
+            {"d": 33140509.29, "h": 49667273.02, "f": 6869585.69, "p": 31, "exc": 33140509.29},
+            {"d": 49667273.02, "h": float('inf'), "f": 11992882.45, "p": 35, "exc": 49667273.02},
+        ]
+        
+        tramo = next((t for t in escala if t["d"] <= neto < t["h"]), None)
+        imp = 0.0
+        if tramo:
+            imp = tramo["f"] + ((neto - tramo["exc"]) * (tramo["p"] / 100))
+            
+        return imp, bruto_acum, aportes_acum, ded_total_acum, neto, tramo, base_max_aportes
 
-    # 4. Deducciones Personales
-    mni_anual = 4093923.60
-    ded_esp_anual = 19650833.28
-    ded_acum = ((mni_anual + ded_esp_anual) / 12) * mes_sel
+    # --- EJECUCIÓN CÁLCULOS ---
+    # 1. Impuesto Acumulado Actual
+    imp_actual, br_acum, ap_acum, de_acum, nt_suj, tramo_act, tope_act = calcular_acumulados(mes_sel, sueldo, sac)
     
-    # 5. Ganancia Neta Sujeta a Impuesto (Restando Aportes)
-    neto_sujeto = max(0, bruto_acumulado - ded_acum - aportes_acumulados)
-
-    # 6. Búsqueda en escala Art 94
-    escala = [
-        {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
-        {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
-        {"d": 3273136.72, "h": 4909705.08, "f": 229119.57, "p": 12, "exc": 3273136.72},
-        {"d": 4909705.08, "h": 7364557.62, "f": 425507.77, "p": 15, "exc": 4909705.08},
-        {"d": 7364557.62, "h": 14729115.24, "f": 793735.65, "p": 19, "exc": 7364557.62},
-        {"d": 14729115.24, "h": 22093672.86, "f": 2193001.60, "p": 23, "exc": 14729115.24},
-        {"d": 22093672.86, "h": 33140509.29, "f": 3886949.85, "p": 27, "exc": 22093672.86},
-        {"d": 33140509.29, "h": 49667273.02, "f": 6869585.69, "p": 31, "exc": 33140509.29},
-        {"d": 49667273.02, "h": float('inf'), "f": 11992882.45, "p": 35, "exc": 49667273.02},
-    ]
-
-    tramo = next((t for t in escala if t["d"] <= neto_sujeto < t["h"]), None)
-    impuesto = 0
-    if tramo:
-        impuesto = tramo["f"] + ((neto_sujeto - tramo["exc"]) * (tramo["p"] / 100))
+    # 2. Impuesto Acumulado Mes Anterior (Para calcular retención mensual)
+    imp_anterior = 0.0
+    if mes_sel > 1:
+        imp_anterior, _, _, _, _, _, _ = calcular_acumulados(mes_sel - 1, sueldo, sac)
+        
+    retencion_mes = imp_actual - imp_anterior
 
     st.markdown("---")
     
     with st.container(border=True):
-        st.markdown(f"### 📉 Resultado a {meses[mes_sel]}")
+        st.markdown(f"### 📉 Resultado Acumulado a {meses[mes_sel]}")
         
         c_res1, c_res2, c_res3, c_res4 = st.columns(4)
-        c_res1.metric("Bruto Acumulado", f"${bruto_acumulado:,.2f}")
-        c_res2.metric("Aportes (17%)", f"${aportes_acumulados:,.2f}")
-        c_res3.metric("Deducciones (MNI+Esp)", f"${ded_acum:,.2f}")
-        c_res4.metric("Neto Sujeto a Impuesto", f"${neto_sujeto:,.2f}")
+        c_res1.metric("Bruto Acumulado", f"${br_acum:,.2f}")
+        c_res2.metric("Aportes (17%)", f"-${ap_acum:,.2f}") # Signo menos agregado
+        c_res3.metric("Deducciones (MNI+Esp)", f"-${de_acum:,.2f}") # Signo menos agregado
+        c_res4.metric("Neto Sujeto a Impuesto", f"${nt_suj:,.2f}")
+        
+        st.divider()
+
+        # BASE IMPONIBLE MAXIMA ARRIBA DE LA ESCALA
+        st.write(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${tope_act:,.2f}")
+        st.markdown("") # Espacio
+
+        if tramo_act:
+            st.write(f"**Ubicación en Escala:** Tramo de ${tramo_act['d']:,.2f} a ${tramo_act['h'] if tramo_act['h']!=float('inf') else '...':,.2f}")
+            st.write(f"**Monto Fijo:** ${tramo_act['f']:,.2f} + **{tramo_act['p']}%** sobre excedente de ${tramo_act['exc']:,.2f}")
         
         st.divider()
         
-        if tramo:
-            st.write(f"**Ubicación en Escala:** Tramo de ${tramo['d']:,.2f} a ${tramo['h'] if tramo['h']!=float('inf') else '...':,.2f}")
-            st.write(f"**Monto Fijo:** ${tramo['f']:,.2f} + **{tramo['p']}%** sobre excedente de ${tramo['exc']:,.2f}")
+        # DESGLOSE DEL IMPUESTO
+        c_imp1, c_imp2, c_imp3 = st.columns(3)
+        c_imp1.metric("Impuesto Acum. Mes Anterior", f"${imp_anterior:,.2f}")
+        c_imp2.metric(f"Impuesto del Mes ({meses[mes_sel]})", f"${retencion_mes:,.2f}")
         
-        st.error(f"### Impuesto Determinado Estimado: ${impuesto:,.2f}")
-        
-        # MOSTRAR BASE MÁXIMA CORRECTA (DICIEMBRE)
-        st.info(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${base_max_aportes:,.2f}")
+        # RESULTADO FINAL DESTACADO
+        st.error(f"### Total Impuesto Determinado (Acumulado): ${imp_actual:,.2f}")
 
 st.divider()
 
