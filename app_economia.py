@@ -228,14 +228,14 @@ with t_calc:
         sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # Inputs Cargas de Familia (ORDEN INVERTIDO Y TAMAÑO AJUSTADO)
+    # Inputs Cargas de Familia (MODIFICADO: HIJOS IZQ, CONYUGE DER)
     st.markdown("**Cargas de Familia**")
-    # Columna izquierda (Hijos) más pequeña [1], Columna derecha (Cónyuge) más grande [3]
-    c_fam1, c_fam2 = st.columns([1, 3])
+    # Columna izquierda (Hijos) 1/6, Columna derecha (Cónyuge) 5/6 para comprimir el input
+    c_fam1, c_fam2 = st.columns([1, 5])
     with c_fam1:
-        cant_hijos = st.number_input("Hijos (<18)", min_value=0, step=1)
+        cant_hijos = st.number_input("Hijos (<18)", min_value=0, max_value=999, step=1)
     with c_fam2:
-        st.write("") # Espaciado para alinear visualmente mejor el checkbox
+        st.write("") 
         st.write("")
         tiene_conyuge = st.checkbox("Cónyuge / Unión Convivencial a cargo")
 
@@ -385,5 +385,3 @@ with c_prov:
         * **Moratoria:** Prórroga hasta el 30/12/2025 (Dto. 3584/3). 
         * **Sellos:** Exención para contratos de alquiler de vivienda.
         """)
-
-
