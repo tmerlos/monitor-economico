@@ -142,48 +142,10 @@ with tab_inflacion:
 
 st.divider()
 
-# --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS + CALCULADORA) ---
+# --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS + CALCULADORA AL FINAL) ---
 st.subheader("⚖️ Tablas de Liquidación Completas (Auditadas)")
-t_calc, t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg = st.tabs(["🧮 Calculadora", "Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830"])
-
-with t_calc:
-    st.markdown("#### Simulación de Base Imponible y Deducciones Acumuladas")
-    
-    # Columnas de Input
-    c_cal1, c_cal2, c_cal3 = st.columns(3)
-    
-    with c_cal1:
-        # Selección de Mes (Clave para el prorrateo)
-        meses = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
-        mes_sel = st.selectbox("Seleccione Mes de Cálculo", options=list(meses.keys()), format_func=lambda x: meses[x])
-        
-    with c_cal2:
-        sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=1000.0, format="%.2f")
-        
-    with c_cal3:
-        opcion_sac = st.radio("¿Incluye Aguinaldo Proporcional?", ["Sí", "No"], horizontal=True)
-        sac = True if opcion_sac == "Sí" else False
-
-    st.divider()
-    
-    # Lógica de Prorrateo de Deducciones
-    # Valores Anuales 2025 (Constantes)
-    mni_anual = 4093923.60
-    ded_esp_anual = 19650833.28
-    
-    # Cálculo Acumulado al mes seleccionado
-    mni_acumulado = (mni_anual / 12) * mes_sel
-    ded_esp_acumulada = (ded_esp_anual / 12) * mes_sel
-    
-    st.markdown(f"**📉 Deducciones Acumuladas a {meses[mes_sel]} (Mes {mes_sel})**")
-    
-    col_res1, col_res2, col_res3 = st.columns(3)
-    col_res1.metric(label="MNI Acumulado", value=f"${mni_acumulado:,.2f}")
-    col_res2.metric(label="Ded. Especial Acumulada", value=f"${ded_esp_acumulada:,.2f}")
-    
-    # Total de deducciones básicas acumuladas
-    total_deducciones = mni_acumulado + ded_esp_acumulada
-    col_res3.metric(label="Total Deducciones Base", value=f"${total_deducciones:,.2f}")
+# Reordenamos tabs: Calculadora al final
+t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg, t_calc = st.tabs(["Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830", "🧮 Calculadora"])
 
 with t_ph:
     st.markdown("#### Escala Art. 94 LIG - Período Fiscal 2025 (Completa)")
@@ -284,6 +246,59 @@ with t_rg:
         "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94", "6,0%", "3,0%", "0,25%"]
     }
     st.table(pd.DataFrame(data_rg_full))
+
+with t_calc:
+    st.markdown("#### Simulación de Base Imponible y Deducciones Acumuladas")
+    
+    # Contenedor con Inputs
+    c_cal1, c_cal2, c_cal3 = st.columns(3)
+    
+    with c_cal1:
+        meses = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
+        mes_sel = st.selectbox("Seleccione Mes de Cálculo", options=list(meses.keys()), format_func=lambda x: meses[x])
+        
+    with c_cal2:
+        sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=1000.0, format="%.2f")
+        
+    with c_cal3:
+        opcion_sac = st.radio("¿Incluye Aguinaldo Proporcional?", ["Sí", "No"], horizontal=True)
+        sac = True if opcion_sac == "Sí" else False
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Lógica de Cálculo
+    mni_anual = 4093923.60
+    ded_esp_anual = 19650833.28
+    
+    mni_acumulado = (mni_anual / 12) * mes_sel
+    ded_esp_acumulada = (ded_esp_anual / 12) * mes_sel
+    total_deducciones = mni_acumulado + ded_esp_acumulada
+
+    # --- RECUADRO ROJO PARA RESULTADOS ---
+    # Usamos HTML/CSS puro para dibujar el borde rojo alrededor de los resultados
+    st.markdown(f"""
+    <div style="
+        border: 2px solid #FF4B4B; 
+        border-radius: 10px; 
+        padding: 20px; 
+        background-color: rgba(255, 75, 75, 0.05);">
+        <h4 style="color: #FF4B4B; margin-top: 0;">📉 Resultados al mes de {meses[mes_sel]}</h4>
+        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+            <div style="text-align: center; margin: 10px;">
+                <p style="margin-bottom: 5px; font-weight: bold;">MNI Acumulado</p>
+                <p style="font-size: 1.2rem;">${mni_acumulado:,.2f}</p>
+            </div>
+            <div style="text-align: center; margin: 10px;">
+                <p style="margin-bottom: 5px; font-weight: bold;">Ded. Especial Acum.</p>
+                <p style="font-size: 1.2rem;">${ded_esp_acumulada:,.2f}</p>
+            </div>
+            <div style="text-align: center; margin: 10px;">
+                <p style="margin-bottom: 5px; font-weight: bold;">Total Deducciones</p>
+                <p style="font-size: 1.2rem; color: #FF4B4B;">${total_deducciones:,.2f}</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
