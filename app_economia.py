@@ -228,13 +228,14 @@ with t_calc:
         sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # Inputs Cargas de Familia
+    # Inputs Cargas de Familia (MODIFICADO)
     st.markdown("**Cargas de Familia**")
-    c_fam1, c_fam2 = st.columns(2)
+    # Usamos columnas asimétricas para achicar el campo numérico
+    c_fam1, c_fam2 = st.columns([3, 1]) 
     with c_fam1:
         tiene_conyuge = st.checkbox("Cónyuge / Unión Convivencial a cargo")
     with c_fam2:
-        cant_hijos = st.number_input("Hijos menores de 18 años a cargo", min_value=0, step=1)
+        cant_hijos = st.number_input("Hijos (<18)", min_value=0, step=1)
 
     # --- LÓGICA DE CÁLCULO ---
     def calcular_impuesto_mensualizado(m, s_men, inc_sac, conyuge, hijos):
@@ -336,7 +337,7 @@ with t_calc:
         
         st.divider()
 
-        st.write(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${tope_act:,.2f}")
+        st.write(f"ℹ️ **Base Imponible Máxima para Aportes (Dic 2025):** ${tope_act:,.2f}")
         st.markdown("") 
 
         if tramo_act:
@@ -382,4 +383,5 @@ with c_prov:
         * **Moratoria:** Prórroga hasta el 30/12/2025 (Dto. 3584/3). 
         * **Sellos:** Exención para contratos de alquiler de vivienda.
         """)
+
 
