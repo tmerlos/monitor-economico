@@ -144,7 +144,6 @@ st.divider()
 
 # --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS + CALCULADORA AL FINAL) ---
 st.subheader("⚖️ Tablas de Liquidación Completas (Auditadas)")
-# Reordenamos tabs: Calculadora al final
 t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg, t_calc = st.tabs(["Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830", "🧮 Calculadora"])
 
 with t_ph:
@@ -248,9 +247,9 @@ with t_rg:
     st.table(pd.DataFrame(data_rg_full))
 
 with t_calc:
-    st.markdown("#### Simulación de Base Imponible y Deducciones Acumuladas")
+    st.markdown("#### Simulación de Base Imponible y Cálculo de Impuesto")
     
-    # Contenedor con Inputs
+    # Inputs
     c_cal1, c_cal2, c_cal3 = st.columns(3)
     
     with c_cal1:
@@ -266,7 +265,13 @@ with t_calc:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Lógica de Cálculo
+    # --- LÓGICA DE CÁLCULO ---
+    # 1. Ingresos
+    ingreso_acumulado = sueldo * mes_sel
+    if sac:
+        ingreso_acumulado += (sueldo / 12) * mes_sel
+
+    # 2. Deducciones Acumuladas
     mni_anual = 4093923.60
     ded_esp_anual = 19650833.28
     
@@ -274,28 +279,63 @@ with t_calc:
     ded_esp_acumulada = (ded_esp_anual / 12) * mes_sel
     total_deducciones = mni_acumulado + ded_esp_acumulada
 
-    # --- RECUADRO ROJO PARA RESULTADOS ---
-    # Usamos HTML/CSS puro para dibujar el borde rojo alrededor de los resultados
+    # 3. Ganancia Neta Sujeta a Impuesto
+    ganancia_neta = ingreso_acumulado - total_deducciones
+    if ganancia_neta < 0:
+        ganancia_neta = 0
+
+    # 4. Búsqueda en Escala Art 94 (Auditada)
+    escala = [
+        {"desde": 0, "hasta": 1636568.36, "fijo": 0.00, "tasa": 5, "excedente": 0},
+        {"desde": 1636568.36, "hasta": 3273136.72, "fijo": 81828.42, "tasa": 9, "excedente": 1636568.36},
+        {"desde": 3273136.72, "hasta": 4909705.08, "fijo": 229119.57, "tasa": 12, "excedente": 3273136.72},
+        {"desde": 4909705.08, "hasta": 7364557.62, "fijo": 425507.77, "tasa": 15, "excedente": 4909705.08},
+        {"desde": 7364557.62, "hasta": 14729115.24, "fijo": 793735.65, "tasa": 19, "excedente": 7364557.62},
+        {"desde": 14729115.24, "hasta": 22093672.86, "fijo": 2193001.60, "tasa": 23, "excedente": 14729115.24},
+        {"desde": 22093672.86, "hasta": 33140509.29, "fijo": 3886949.85, "tasa": 27, "excedente": 22093672.86},
+        {"desde": 33140509.29, "hasta": 49667273.02, "fijo": 6869585.69, "tasa": 31, "excedente": 33140509.29},
+        {"desde": 49667273.02, "hasta": float('inf'), "fijo": 11992882.45, "tasa": 35, "excedente": 49667273.02},
+    ]
+
+    tramo_encontrado = None
+    for tramo in escala:
+        if tramo["desde"] <= ganancia_neta < tramo["hasta"]:
+            tramo_encontrado = tramo
+            break
+
+    # Cálculo final del impuesto
+    impuesto_determinado = 0
+    if tramo_encontrado:
+        base_excedente = ganancia_neta - tramo_encontrado["excedente"]
+        impuesto_variable = base_excedente * (tramo_encontrado["tasa"] / 100)
+        impuesto_determinado = tramo_encontrado["fijo"] + impuesto_variable
+
+    # --- RESULTADOS EN RECUADRO ROJO ---
     st.markdown(f"""
-    <div style="
-        border: 2px solid #FF4B4B; 
-        border-radius: 10px; 
-        padding: 20px; 
-        background-color: rgba(255, 75, 75, 0.05);">
-        <h4 style="color: #FF4B4B; margin-top: 0;">📉 Resultados al mes de {meses[mes_sel]}</h4>
-        <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
-            <div style="text-align: center; margin: 10px;">
-                <p style="margin-bottom: 5px; font-weight: bold;">MNI Acumulado</p>
-                <p style="font-size: 1.2rem;">${mni_acumulado:,.2f}</p>
-            </div>
-            <div style="text-align: center; margin: 10px;">
-                <p style="margin-bottom: 5px; font-weight: bold;">Ded. Especial Acum.</p>
-                <p style="font-size: 1.2rem;">${ded_esp_acumulada:,.2f}</p>
-            </div>
-            <div style="text-align: center; margin: 10px;">
-                <p style="margin-bottom: 5px; font-weight: bold;">Total Deducciones</p>
-                <p style="font-size: 1.2rem; color: #FF4B4B;">${total_deducciones:,.2f}</p>
-            </div>
+    <div style="border: 2px solid #FF4B4B; border-radius: 10px; padding: 20px; background-color: rgba(255, 75, 75, 0.05);">
+        <h4 style="color: #FF4B4B; margin-top: 0; text-align: center;">📉 Liquidación Estimada a {meses[mes_sel]}</h4>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+            <span>1. Bruto Acumulado:</span>
+            <strong>${ingreso_acumulado:,.2f}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
+            <span>2. Deducciones Acum. (MNI + Esp):</span>
+            <strong>-${total_deducciones:,.2f}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <span>3. Ganancia Neta Sujeta a Impuesto:</span>
+            <strong style="color: #003366;">${ganancia_neta:,.2f}</strong>
+        </div>
+        
+        <div style="background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ccc;">
+            <p style="margin:0; font-weight:bold; text-decoration: underline;">Ubicación en Escala Art. 94:</p>
+            <p style="margin:5px 0;">• <strong>Rango:</strong> ${tramo_encontrado['desde']:,.2f} a ${tramo_encontrado['hasta'] if tramo_encontrado['hasta'] != float('inf') else 'En adelante':,.2f}</p>
+            <p style="margin:5px 0;">• <strong>Monto Fijo:</strong> ${tramo_encontrado['fijo']:,.2f}</p>
+            <p style="margin:5px 0;">• <strong>Alícuota s/Excedente:</strong> {tramo_encontrado['tasa']}%</p>
+            <p style="margin:5px 0;">• <strong>Excedente de:</strong> ${tramo_encontrado['excedente']:,.2f}</p>
+            <hr>
+            <h3 style="text-align: center; color: #FF4B4B; margin: 10px 0;">Impuesto Determinado: ${impuesto_determinado:,.2f}</h3>
         </div>
     </div>
     """, unsafe_allow_html=True)
