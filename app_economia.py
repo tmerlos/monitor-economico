@@ -228,14 +228,16 @@ with t_calc:
         sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # Inputs Cargas de Familia (MODIFICADO)
+    # Inputs Cargas de Familia (ORDEN INVERTIDO Y TAMAÑO AJUSTADO)
     st.markdown("**Cargas de Familia**")
-    # Usamos columnas asimétricas para achicar el campo numérico
-    c_fam1, c_fam2 = st.columns([3, 1]) 
+    # Columna izquierda (Hijos) más pequeña [1], Columna derecha (Cónyuge) más grande [3]
+    c_fam1, c_fam2 = st.columns([1, 3])
     with c_fam1:
-        tiene_conyuge = st.checkbox("Cónyuge / Unión Convivencial a cargo")
-    with c_fam2:
         cant_hijos = st.number_input("Hijos (<18)", min_value=0, step=1)
+    with c_fam2:
+        st.write("") # Espaciado para alinear visualmente mejor el checkbox
+        st.write("")
+        tiene_conyuge = st.checkbox("Cónyuge / Unión Convivencial a cargo")
 
     # --- LÓGICA DE CÁLCULO ---
     def calcular_impuesto_mensualizado(m, s_men, inc_sac, conyuge, hijos):
@@ -337,7 +339,7 @@ with t_calc:
         
         st.divider()
 
-        st.write(f"ℹ️ **Base Imponible Máxima para Aportes (Dic 2025):** ${tope_act:,.2f}")
+        st.write(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${tope_act:,.2f}")
         st.markdown("") 
 
         if tramo_act:
