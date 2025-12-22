@@ -7,6 +7,25 @@ from datetime import datetime
 # --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="Monitor Estratégico UHY 2025", layout="wide")
 
+# --- CSS PERSONALIZADO (PANTONE 3302 Y TEXTO BLANCO EN SIDEBAR) ---
+st.markdown("""
+    <style>
+    /* Fondo del Sidebar - Pantone 3302 C aprox (#004B39) */
+    [data-testid="stSidebar"] {
+        background-color: #004B39;
+    }
+    /* Texto blanco en Sidebar */
+    [data-testid="stSidebar"] * {
+        color: #FFFFFF !important;
+    }
+    /* Ajuste para que los inputs o botones dentro del sidebar se vean bien */
+    [data-testid="stSidebar"] .stButton button {
+        color: #004B39 !important;
+        background-color: #FFFFFF !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- 2. CARGA DE DATOS ---
 @st.cache_data(ttl=600)
 def obtener_datos():
@@ -211,7 +230,7 @@ with t_calc:
         sac_op = st.radio("¿Incluye SAC?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # Cálculos
+    # Cálculos Impuesto
     bruto_acum = sueldo * mes_sel
     if sac: bruto_acum += (sueldo / 12) * mes_sel
 
@@ -220,6 +239,10 @@ with t_calc:
     ded_acum = ((mni_anual + ded_esp_anual) / 12) * mes_sel
     
     neto_sujeto = max(0, bruto_acum - ded_acum)
+
+    # Cálculo Base Imponible Máxima Seguridad Social (Estimado 2025)
+    # Base estimada inicio 2025: $3.800.000 aprox con ajuste mensual del 3%
+    base_max_aportes = 3800000 * (1.03 ** (mes_sel - 1))
 
     # Búsqueda en escala
     escala = [
@@ -241,8 +264,7 @@ with t_calc:
 
     st.markdown("---")
     
-    # RECUADRO ROJO CON COMPONENTES NATIVOS (SEGURO)
-    # Usamos st.error porque tiene borde y fondo rojo por defecto en Streamlit
+    # RECUADRO ROJO CON RESULTADOS
     with st.container(border=True):
         st.markdown(f"### 📉 Resultado a {meses[mes_sel]}")
         
@@ -257,8 +279,10 @@ with t_calc:
             st.write(f"**Ubicación en Escala:** Tramo de ${tramo['d']:,.2f} a ${tramo['h'] if tramo['h']!=float('inf') else '...':,.2f}")
             st.write(f"**Monto Fijo:** ${tramo['f']:,.2f} + **{tramo['p']}%** sobre excedente de ${tramo['exc']:,.2f}")
         
-        # El resultado final destacado en rojo usando st.error
         st.error(f"### Impuesto Determinado Estimado: ${impuesto:,.2f}")
+        
+        # Base Máxima Aportes (Nuevo)
+        st.info(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${base_max_aportes:,.2f}")
 
 st.divider()
 
