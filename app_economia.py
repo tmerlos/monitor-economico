@@ -65,13 +65,11 @@ with st.sidebar:
     st.markdown("### 🔍 Índices Críticos")
     st.metric("Riesgo País", "754 bps", "-31") 
     
-    # MODIFICACIÓN: Dólar Futuro 6 meses agregado arriba del de 12 meses
     st.metric("Dólar Futuro (Jun-26)", "$1.410,20", "+1.8%")
     st.metric("Dólar Futuro (Dic-26)", "$1.645,50", "+2.1%")
     
     st.metric("Índice Merval", "2.140.580", "▲ 2.4%")
     st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%")
-    # MODIFICACIÓN: Balanza Comercial eliminada
     st.metric("Tasa Desempleo", "6.6%")
     
     if st.button("🔄 Actualizar Todo"):
@@ -227,19 +225,23 @@ with t_calc:
     c1, c2, c3 = st.columns(3)
     with c1:
         meses = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio", 8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
-        mes_sel = st.selectbox("Mes de Cálculo", list(meses.keys()), format_func=lambda x: meses[x])
+        # DEFAULT: INDEX 11 (DICIEMBRE)
+        mes_sel = st.selectbox("Mes de Cálculo", list(meses.keys()), index=11, format_func=lambda x: meses[x])
     with c2:
         sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=10000.0, format="%.2f")
     with c3:
-        # MODIFICACIÓN: Texto de la pregunta actualizado
         sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # --- LÓGICA DE CÁLCULO DE APORTES (SIN REDONDEO) ---
+    # --- LÓGICA DE CÁLCULO ---
     
-    # 1. Base Imponible Máxima para Aportes (Proyectada al mes seleccionado sin redondear)
-    # Fórmula de ajuste estimada 3.5% mensual acumulativo desde base enero aprox 3.8M
-    base_max_aportes = 3845678.55 * (1.035**(mes_sel - 1)) 
+    # 1. Base Imponible Máxima para Aportes (CORREGIDA a dato usuario: 3.731.212,01 en Dic 2025)
+    # Calculamos el valor ajustado para el mes seleccionado
+    valor_tope_diciembre = 3731212.01
+    # Asumimos que el valor viene creciendo. Si el usuario selecciona Diciembre, usa exactamente ese valor.
+    # Para meses anteriores, simulamos un valor menor dividiendo por inflación estimada (3.5% mensual)
+    # para mantener coherencia lógica, pero asegurando el valor exacto en Dic.
+    base_max_aportes = valor_tope_diciembre / (1.035**(12 - mes_sel)) 
 
     # 2. Cálculo de Aportes Mensuales con Tope
     if sueldo > base_max_aportes:
@@ -254,24 +256,21 @@ with t_calc:
     aportes_acumulados = aporte_mensual_17 * mes_sel
     
     if sac:
-        # Si incluye SAC, sumamos la parte proporcional del bruto y sus aportes (con tope al 50%)
+        # SAC Proporcional (Bruto)
         bruto_sac = (sueldo / 12) * mes_sel
         bruto_acumulado += bruto_sac
         
+        # Aportes SAC (Con su propio tope al 50%)
         tope_sac = base_max_aportes / 2
-        sueldo_sac_mensual = sueldo / 2
+        sueldo_sac_teorico = sueldo / 2
         
-        if sueldo_sac_mensual > tope_sac:
+        if sueldo_sac_teorico > tope_sac:
              base_calculo_sac = tope_sac
         else:
-             base_calculo_sac = sueldo_sac_mensual
+             base_calculo_sac = sueldo_sac_teorico
              
-        # Aporte SAC proporcional (estimado mensual / 12 * meses)
+        # Aporte SAC proporcional acumulado
         aporte_sac_acumulado = (base_calculo_sac * 0.17 / 12) * mes_sel 
-        # Nota: Simplificación operativa para SAC proporcional en la herramienta
-        # Ajustamos a la lógica estándar de devengado: 
-        # (Sueldo / 12) * 17% * Meses (Si no supera tope). Si supera tope, (Tope/2 / 12??).
-        # Para ser consistentes con la instrucción "17% del sueldo bruto (topeado)":
         aportes_acumulados += aporte_sac_acumulado
 
     # 4. Deducciones Personales
@@ -282,7 +281,7 @@ with t_calc:
     # 5. Ganancia Neta Sujeta a Impuesto (Restando Aportes)
     neto_sujeto = max(0, bruto_acumulado - ded_acum - aportes_acumulados)
 
-    # 6. Búsqueda en escala
+    # 6. Búsqueda en escala Art 94
     escala = [
         {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
         {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
@@ -319,7 +318,7 @@ with t_calc:
         
         st.error(f"### Impuesto Determinado Estimado: ${impuesto:,.2f}")
         
-        # MODIFICACIÓN: Mostrar la base máxima exacta del mes seleccionado
+        # MOSTRAR BASE MÁXIMA CORRECTA (DICIEMBRE)
         st.info(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${base_max_aportes:,.2f}")
 
 st.divider()
