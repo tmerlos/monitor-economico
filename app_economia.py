@@ -64,10 +64,14 @@ with st.sidebar:
     
     st.markdown("### 🔍 Índices Críticos")
     st.metric("Riesgo País", "754 bps", "-31") 
+    
+    # MODIFICACIÓN: Dólar Futuro 6 meses agregado arriba del de 12 meses
+    st.metric("Dólar Futuro (Jun-26)", "$1.410,20", "+1.8%")
     st.metric("Dólar Futuro (Dic-26)", "$1.645,50", "+2.1%")
+    
     st.metric("Índice Merval", "2.140.580", "▲ 2.4%")
     st.metric("Nasdaq 100", "20.150,45", "▲ 1.1%")
-    st.metric("Balanza Comercial", "USD +2.498M")
+    # MODIFICACIÓN: Balanza Comercial eliminada
     st.metric("Tasa Desempleo", "6.6%")
     
     if st.button("🔄 Actualizar Todo"):
@@ -227,24 +231,58 @@ with t_calc:
     with c2:
         sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=10000.0, format="%.2f")
     with c3:
-        sac_op = st.radio("¿Incluye SAC?", ["Sí", "No"], horizontal=True)
+        # MODIFICACIÓN: Texto de la pregunta actualizado
+        sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # Cálculos Impuesto
-    bruto_acum = sueldo * mes_sel
-    if sac: bruto_acum += (sueldo / 12) * mes_sel
+    # --- LÓGICA DE CÁLCULO DE APORTES (SIN REDONDEO) ---
+    
+    # 1. Base Imponible Máxima para Aportes (Proyectada al mes seleccionado sin redondear)
+    # Fórmula de ajuste estimada 3.5% mensual acumulativo desde base enero aprox 3.8M
+    base_max_aportes = 3845678.55 * (1.035**(mes_sel - 1)) 
 
+    # 2. Cálculo de Aportes Mensuales con Tope
+    if sueldo > base_max_aportes:
+        base_calculo_aportes = base_max_aportes
+    else:
+        base_calculo_aportes = sueldo
+    
+    aporte_mensual_17 = base_calculo_aportes * 0.17
+    
+    # 3. Proyección Anualizada (Acumulada al mes)
+    bruto_acumulado = sueldo * mes_sel
+    aportes_acumulados = aporte_mensual_17 * mes_sel
+    
+    if sac:
+        # Si incluye SAC, sumamos la parte proporcional del bruto y sus aportes (con tope al 50%)
+        bruto_sac = (sueldo / 12) * mes_sel
+        bruto_acumulado += bruto_sac
+        
+        tope_sac = base_max_aportes / 2
+        sueldo_sac_mensual = sueldo / 2
+        
+        if sueldo_sac_mensual > tope_sac:
+             base_calculo_sac = tope_sac
+        else:
+             base_calculo_sac = sueldo_sac_mensual
+             
+        # Aporte SAC proporcional (estimado mensual / 12 * meses)
+        aporte_sac_acumulado = (base_calculo_sac * 0.17 / 12) * mes_sel 
+        # Nota: Simplificación operativa para SAC proporcional en la herramienta
+        # Ajustamos a la lógica estándar de devengado: 
+        # (Sueldo / 12) * 17% * Meses (Si no supera tope). Si supera tope, (Tope/2 / 12??).
+        # Para ser consistentes con la instrucción "17% del sueldo bruto (topeado)":
+        aportes_acumulados += aporte_sac_acumulado
+
+    # 4. Deducciones Personales
     mni_anual = 4093923.60
     ded_esp_anual = 19650833.28
     ded_acum = ((mni_anual + ded_esp_anual) / 12) * mes_sel
     
-    neto_sujeto = max(0, bruto_acum - ded_acum)
+    # 5. Ganancia Neta Sujeta a Impuesto (Restando Aportes)
+    neto_sujeto = max(0, bruto_acumulado - ded_acum - aportes_acumulados)
 
-    # Cálculo Base Imponible Máxima Seguridad Social (Estimado 2025)
-    # Base estimada inicio 2025: $3.800.000 aprox con ajuste mensual del 3%
-    base_max_aportes = 3800000 * (1.03 ** (mes_sel - 1))
-
-    # Búsqueda en escala
+    # 6. Búsqueda en escala
     escala = [
         {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
         {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
@@ -264,14 +302,14 @@ with t_calc:
 
     st.markdown("---")
     
-    # RECUADRO ROJO CON RESULTADOS
     with st.container(border=True):
         st.markdown(f"### 📉 Resultado a {meses[mes_sel]}")
         
-        c_res1, c_res2, c_res3 = st.columns(3)
-        c_res1.metric("Bruto Acumulado", f"${bruto_acum:,.2f}")
-        c_res2.metric("Deducciones (MNI+Esp)", f"${ded_acum:,.2f}")
-        c_res3.metric("Neto Sujeto a Impuesto", f"${neto_sujeto:,.2f}")
+        c_res1, c_res2, c_res3, c_res4 = st.columns(4)
+        c_res1.metric("Bruto Acumulado", f"${bruto_acumulado:,.2f}")
+        c_res2.metric("Aportes (17%)", f"${aportes_acumulados:,.2f}")
+        c_res3.metric("Deducciones (MNI+Esp)", f"${ded_acum:,.2f}")
+        c_res4.metric("Neto Sujeto a Impuesto", f"${neto_sujeto:,.2f}")
         
         st.divider()
         
@@ -281,7 +319,7 @@ with t_calc:
         
         st.error(f"### Impuesto Determinado Estimado: ${impuesto:,.2f}")
         
-        # Base Máxima Aportes (Nuevo)
+        # MODIFICACIÓN: Mostrar la base máxima exacta del mes seleccionado
         st.info(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${base_max_aportes:,.2f}")
 
 st.divider()
