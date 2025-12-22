@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import requests
+import os
 from datetime import datetime
 
 # --- 1. CONFIGURACIÓN ---
@@ -37,7 +38,7 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # Carga del Logo desde el archivo local en el repositorio o web
+    # Carga del Logo
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
@@ -59,7 +60,7 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- 4. ENCABEZADO (SIN LOGO A LA DERECHA) ---
+# --- 4. ENCABEZADO (SIN LOGO DERECHA) ---
 st.title("Monitor Económico e Impositivo Integral")
 st.markdown("**Powered by UHY Macho & Asociados**")
 
@@ -141,9 +142,48 @@ with tab_inflacion:
 
 st.divider()
 
-# --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS) ---
+# --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS + CALCULADORA) ---
 st.subheader("⚖️ Tablas de Liquidación Completas (Auditadas)")
-t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg = st.tabs(["Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830"])
+t_calc, t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg = st.tabs(["🧮 Calculadora", "Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830"])
+
+with t_calc:
+    st.markdown("#### Simulación de Base Imponible y Deducciones Acumuladas")
+    
+    # Columnas de Input
+    c_cal1, c_cal2, c_cal3 = st.columns(3)
+    
+    with c_cal1:
+        # Selección de Mes (Clave para el prorrateo)
+        meses = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
+        mes_sel = st.selectbox("Seleccione Mes de Cálculo", options=list(meses.keys()), format_func=lambda x: meses[x])
+        
+    with c_cal2:
+        sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=1000.0, format="%.2f")
+        
+    with c_cal3:
+        opcion_sac = st.radio("¿Incluye Aguinaldo Proporcional?", ["Sí", "No"], horizontal=True)
+        sac = True if opcion_sac == "Sí" else False
+
+    st.divider()
+    
+    # Lógica de Prorrateo de Deducciones
+    # Valores Anuales 2025 (Constantes)
+    mni_anual = 4093923.60
+    ded_esp_anual = 19650833.28
+    
+    # Cálculo Acumulado al mes seleccionado
+    mni_acumulado = (mni_anual / 12) * mes_sel
+    ded_esp_acumulada = (ded_esp_anual / 12) * mes_sel
+    
+    st.markdown(f"**📉 Deducciones Acumuladas a {meses[mes_sel]} (Mes {mes_sel})**")
+    
+    col_res1, col_res2, col_res3 = st.columns(3)
+    col_res1.metric(label="MNI Acumulado", value=f"${mni_acumulado:,.2f}")
+    col_res2.metric(label="Ded. Especial Acumulada", value=f"${ded_esp_acumulada:,.2f}")
+    
+    # Total de deducciones básicas acumuladas
+    total_deducciones = mni_acumulado + ded_esp_acumulada
+    col_res3.metric(label="Total Deducciones Base", value=f"${total_deducciones:,.2f}")
 
 with t_ph:
     st.markdown("#### Escala Art. 94 LIG - Período Fiscal 2025 (Completa)")
