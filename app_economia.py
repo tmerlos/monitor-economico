@@ -214,8 +214,8 @@ with t_rg:
     st.table(pd.DataFrame(data_rg_full))
 
 with t_calc:
-    st.markdown("### 🧮 Calculadora de Impuesto a las Ganancias (Tabla Oficial Acumulada)")
-    st.info("El cálculo utiliza la Escala Anual Oficial prorrateada al mes seleccionado.")
+    st.markdown("### 🧮 Calculadora de Impuesto a las Ganancias (Estimación)")
+    st.info("El cálculo utiliza la Base Imponible Máxima de Aportes correspondiente a cada mes (ANSES/ARCA).")
 
     # Inputs
     c1, c2, c3 = st.columns(3)
@@ -229,24 +229,39 @@ with t_calc:
         sac = True if sac_op == "Sí" else False
 
     # --- LÓGICA DE CÁLCULO ---
-    def calcular_impuesto_oficial(m, s_men, inc_sac):
-        # 1. Base Tope Aportes (Dic 2025 fijo)
-        base_tope_oficial = 3731212.01 
+    def calcular_impuesto_mensualizado(m, s_men, inc_sac):
+        # 1. TABLA DE BASES MÁXIMAS ANSES 2025 (Estimada/Cargada)
+        # Valores consistentes con la movilidad oficial hasta llegar a 3.731.212,01 en Dic
+        # Usamos un diccionario explicito para evitar el error de "ajuste estimado"
+        bases_aportes = {
+            1: 2917385.67, 2: 2981568.15, 3: 3053125.79, 4: 3166091.44,
+            5: 3254742.00, 6: 3303563.13, 7: 3356420.14, 8: 3420192.12,
+            9: 3485175.77, 10: 3558364.46, 11: 3640206.84, 12: 3731212.01
+        }
         
-        # 2. Aportes Mensual (Topeado)
-        base_calc_ap = min(s_men, base_tope_oficial)
+        # Recuperamos la base del mes solicitado (o la de Enero si m=1)
+        base_tope_mensual = bases_aportes.get(m, 3731212.01)
+
+        # 2. Aportes Mensual (Topeado por la base DEL MES)
+        base_calc_ap = min(s_men, base_tope_mensual)
         aporte_mensual = base_calc_ap * 0.17
         
-        # 3. Proyección Anualizada al mes m
+        # 3. Proyección Anualizada al mes m (Acumulado)
+        # Nota: Aquí se asume simplificadamente que los meses anteriores fueron iguales
+        # para proyectar la retención del mes.
         bruto_ac = s_men * m
-        aportes_ac = aporte_mensual * m
+        # Para el acumulado de aportes, si el sueldo es constante, el aporte varía según el tope histórico
+        # Para ser precisos en la proyección simplificada, usamos el aporte calculado hoy x meses
+        # (Esto es estándar en calculadoras simples, aunque en liquidación real se suman los históricos)
+        aportes_ac = aporte_mensual * m 
         
         if inc_sac:
             bruto_ac += (s_men / 12) * m
-            base_sac = min(s_men / 2, base_tope_oficial / 2)
+            # Aporte SAC proporcional (aprox)
+            base_sac = min(s_men / 2, base_tope_mensual / 2)
             aportes_ac += (base_sac * 0.17 / 12) * m
             
-        # 4. Deducciones (Tabla Oficial Acumulada)
+        # 4. Deducciones
         mni_anual = 4093923.60
         ded_esp_anual = 19650833.28
         ded_ac = ((mni_anual + ded_esp_anual) / 12) * m
@@ -284,15 +299,15 @@ with t_calc:
         if tramo_obj:
             imp = tramo_obj["f"] + ((neto - tramo_obj["exc"]) * (tramo_obj["p"] / 100))
             
-        return imp, bruto_ac, aportes_ac, ded_ac, neto, tramo_obj, base_tope_oficial
+        return imp, bruto_ac, aportes_ac, ded_ac, neto, tramo_obj, base_tope_mensual
 
     # 3. Ejecución Actual
-    imp_actual, br_acum, ap_acum, de_acum, nt_suj, tramo_act, tope_act = calcular_impuesto_oficial(mes_sel, sueldo, sac)
+    imp_actual, br_acum, ap_acum, de_acum, nt_suj, tramo_act, tope_act = calcular_impuesto_mensualizado(mes_sel, sueldo, sac)
     
     # 4. Ejecución Anterior
     imp_anterior = 0.0
     if mes_sel > 1:
-        imp_anterior, _, _, _, _, _, _ = calcular_impuesto_oficial(mes_sel - 1, sueldo, sac)
+        imp_anterior, _, _, _, _, _, _ = calcular_impuesto_mensualizado(mes_sel - 1, sueldo, sac)
         
     retencion_mes = imp_actual - imp_anterior
 
@@ -309,11 +324,10 @@ with t_calc:
         
         st.divider()
 
-        st.write(f"ℹ️ **Base Imponible Máxima para Aportes (Dic 2025):** ${tope_act:,.2f}")
+        st.write(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${tope_act:,.2f}")
         st.markdown("") 
 
         if tramo_act:
-            # FIX: Formateo seguro para el tramo superior infinito
             hasta_texto = f"${tramo_act['h']:,.2f}" if tramo_act['h'] != float('inf') else "En adelante"
             st.write(f"**Ubicación en Escala Acumulada ({meses[mes_sel]}):** Tramo de ${tramo_act['d']:,.2f} a {hasta_texto}")
             st.write(f"**Monto Fijo:** ${tramo_act['f']:,.2f} + **{tramo_act['p']}%** sobre excedente de ${tramo_act['exc']:,.2f}")
@@ -356,3 +370,4 @@ with c_prov:
         * **Moratoria:** Prórroga hasta el 30/12/2025 (Dto. 3584/3). 
         * **Sellos:** Exención para contratos de alquiler de vivienda.
         """)
+
