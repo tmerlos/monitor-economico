@@ -215,9 +215,9 @@ with t_rg:
 
 with t_calc:
     st.markdown("### 🧮 Calculadora de Impuesto a las Ganancias (Tabla Oficial Acumulada)")
-    st.info("El cálculo utiliza la Escala Anual Oficial prorrateada al mes seleccionado, sin estimaciones de inflación.")
+    st.info("El cálculo utiliza la Escala Anual Oficial prorrateada al mes seleccionado.")
 
-    # Inputs (Versión Simplificada)
+    # Inputs
     c1, c2, c3 = st.columns(3)
     with c1:
         meses = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio", 8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
@@ -230,27 +230,23 @@ with t_calc:
 
     # --- LÓGICA DE CÁLCULO ---
     def calcular_impuesto_oficial(m, s_men, inc_sac):
-        # 1. Base Tope Aportes (Oficial Diciembre 2025)
-        # Usamos el valor oficial para el periodo. Si estuviéramos en meses anteriores
-        # la tabla de ARCA indicaría otro valor. Aquí usamos el valor de cierre solicitado.
+        # 1. Base Tope Aportes (Dic 2025 fijo)
         base_tope_oficial = 3731212.01 
         
         # 2. Aportes Mensual (Topeado)
         base_calc_ap = min(s_men, base_tope_oficial)
         aporte_mensual = base_calc_ap * 0.17
         
-        # 3. Proyección Anualizada al mes m (Acumulado)
+        # 3. Proyección Anualizada al mes m
         bruto_ac = s_men * m
         aportes_ac = aporte_mensual * m
         
         if inc_sac:
             bruto_ac += (s_men / 12) * m
-            # Aporte SAC proporcional (aprox)
             base_sac = min(s_men / 2, base_tope_oficial / 2)
             aportes_ac += (base_sac * 0.17 / 12) * m
             
         # 4. Deducciones (Tabla Oficial Acumulada)
-        # Tomamos los valores anuales auditados y los proporcionamos por el mes
         mni_anual = 4093923.60
         ded_esp_anual = 19650833.28
         ded_ac = ((mni_anual + ded_esp_anual) / 12) * m
@@ -258,10 +254,7 @@ with t_calc:
         # 5. Neto
         neto = max(0, bruto_ac - ded_ac - aportes_ac)
         
-        # 6. Escala Art 94 (Tabla Oficial Acumulada)
-        # Los valores de la tabla anual se dividen por 12 y se multiplican por el mes
-        # para obtener la tabla vigente acumulada al periodo.
-        
+        # 6. Escala Art 94
         base_escala = [
             {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
             {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
@@ -274,9 +267,8 @@ with t_calc:
             {"d": 49667273.02, "h": float('inf'), "f": 11992882.45, "p": 35, "exc": 49667273.02},
         ]
         
-        escala_acumulada = []
         prop = m / 12
-        
+        escala_acumulada = []
         for tramo in base_escala:
             t_nuevo = {
                 "d": tramo["d"] * prop,
@@ -321,7 +313,9 @@ with t_calc:
         st.markdown("") 
 
         if tramo_act:
-            st.write(f"**Ubicación en Escala Acumulada ({meses[mes_sel]}):** Tramo de ${tramo_act['d']:,.2f} a ${tramo_act['h'] if tramo_act['h']!=float('inf') else '...':,.2f}")
+            # FIX: Formateo seguro para el tramo superior infinito
+            hasta_texto = f"${tramo_act['h']:,.2f}" if tramo_act['h'] != float('inf') else "En adelante"
+            st.write(f"**Ubicación en Escala Acumulada ({meses[mes_sel]}):** Tramo de ${tramo_act['d']:,.2f} a {hasta_texto}")
             st.write(f"**Monto Fijo:** ${tramo_act['f']:,.2f} + **{tramo_act['p']}%** sobre excedente de ${tramo_act['exc']:,.2f}")
         
         st.divider()
