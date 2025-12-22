@@ -17,17 +17,13 @@ def obtener_datos():
     except:
         pizarra = {"Oficial": 1030.50, "Blue": 1485.00, "MEP": 1496.80, "CCL": 1555.00}
     
-    # Clima CABA (Fijo: Ciudad de Buenos Aires)
+    # Clima CABA (Fijo)
     try:
-        # Coordenadas exactas del Obelisco
         lat, lon = -34.6037, -58.3816
         url_w = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=precipitation_probability"
         res_w = requests.get(url_w, timeout=3).json()
-        
         temp = res_w['current_weather']['temperature']
-        # Probabilidad de lluvia hora actual
         prob = res_w['hourly']['precipitation_probability'][datetime.now().hour]
-        
         clima = f"{temp}°C - CABA (Lluvia: {prob}%)"
     except:
         clima = "27°C - CABA (Lluvia: --%)"
@@ -38,7 +34,6 @@ pizarra, clima_actual = obtener_datos()
 
 # --- 3. SIDEBAR ---
 with st.sidebar:
-    # Carga del Logo
     try:
         st.image("logo_uhy.png", use_container_width=True)
     except:
@@ -60,10 +55,9 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-# --- 4. ENCABEZADO (SIN LOGO DERECHA) ---
+# --- 4. ENCABEZADO ---
 st.title("Monitor Económico e Impositivo Integral")
 st.markdown("**Powered by UHY Macho & Asociados**")
-
 st.markdown("---")
 
 cols = st.columns(len(pizarra))
@@ -73,7 +67,7 @@ for i, (n, v) in enumerate(pizarra.items()):
 
 st.divider()
 
-# --- 5. ACTUALIDAD (TABS) ---
+# --- 5. ACTUALIDAD ---
 st.subheader("📰 Centro de Novedades y Alertas")
 t_eco, t_imp, t_bo = st.tabs(["📈 Noticias Económicas (6)", "⚖️ Noticias Impositivas (6)", "📜 Boletín Oficial"])
 
@@ -113,7 +107,7 @@ with t_bo:
 
 st.divider()
 
-# --- 6. INDICADORES ECONÓMICOS ---
+# --- 6. INDICADORES ---
 st.subheader("📊 Indicadores Financieros")
 tab_tasas, tab_inflacion = st.tabs(["🏦 Tasas y Fondos", "📊 Inflación (Tabla Completa)"])
 
@@ -142,45 +136,25 @@ with tab_inflacion:
 
 st.divider()
 
-# --- 7. CUADROS DE IMPUESTOS (TABLAS COMPLETAS + CALCULADORA AL FINAL) ---
+# --- 7. TABLAS DE IMPUESTOS Y CALCULADORA ---
 st.subheader("⚖️ Tablas de Liquidación Completas (Auditadas)")
 t_ph, t_bbpp, t_deduc, t_soc, t_mon, t_rg, t_calc = st.tabs(["Ganancias PH", "Bienes Personales", "Deducciones", "Sociedades", "Monotributo", "RG 830", "🧮 Calculadora"])
 
 with t_ph:
     st.markdown("#### Escala Art. 94 LIG - Período Fiscal 2025 (Completa)")
     df_ph = pd.DataFrame({
-        "Ganancia Neta Imponible Acum. ($)": [
-            "0,00 a 1.636.568,36", 
-            "1.636.568,36 a 3.273.136,72", 
-            "3.273.136,72 a 4.909.705,08",
-            "4.909.705,08 a 7.364.557,62", 
-            "7.364.557,62 a 14.729.115,24", 
-            "14.729.115,24 a 22.093.672,86",
-            "22.093.672,86 a 33.140.509,29", 
-            "33.140.509,29 a 49.667.273,02", 
-            "Más de 49.667.273,02"
-        ],
-        "Monto Fijo ($)": [
-            "0,00", "81.828,42", "229.119,57", "425.507,77", "793.735,65", 
-            "2.193.001,60", "3.886.949,85", "6.869.585,69", "11.992.882,45"
-        ],
+        "Ganancia Neta Imponible Acum. ($)": ["0 a 1.636.568,36", "1.636.568,36 a 3.273.136,72", "3.273.136,72 a 4.909.705,08", "4.909.705,08 a 7.364.557,62", "7.364.557,62 a 14.729.115,24", "14.729.115,24 a 22.093.672,86", "22.093.672,86 a 33.140.509,29", "33.140.509,29 a 49.667.273,02", "Más de 49.667.273,02"],
+        "Monto Fijo ($)": ["0,00", "81.828,42", "229.119,57", "425.507,77", "793.735,65", "2.193.001,60", "3.886.949,85", "6.869.585,69", "11.992.882,45"],
         "Alícuota %": ["5%", "9%", "12%", "15%", "19%", "23%", "27%", "31%", "35%"],
-        "S/ Excedente de ($)": [
-            "0,00", "1.636.568,36", "3.273.136,72", "4.909.705,08", "7.364.557,62", 
-            "14.729.115,24", "22.093.672,86", "33.140.509,29", "49.667.273,02"
-        ]
+        "S/ Excedente de ($)": ["0,00", "1.636.568,36", "3.273.136,72", "4.909.705,08", "7.364.557,62", "14.729.115,24", "22.093.672,86", "33.140.509,29", "49.667.273,02"]
     })
     st.table(df_ph)
 
 with t_bbpp:
-    st.markdown("#### Bienes Personales 2025 (Escala Completa)")
+    st.markdown("#### Bienes Personales 2025")
     st.write("**Mínimo No Imponible:** $384.728.044,56 | **Casa Habitación:** $1.346.548.155,99")
     df_bbpp = pd.DataFrame({
-        "Valor Total de Bienes que exceda el MNI ($)": [
-            "0,00 a 52.664.283,73", 
-            "52.664.283,73 a 114.105.948,16", 
-            "Más de 114.105.948,16"
-        ],
+        "Valor Total de Bienes que exceda el MNI ($)": ["0 a 52.664.283,73", "52.664.283,73 a 114.105.948,16", "Más de 114.105.948,16"],
         "Pagarán ($)": ["0,00", "263.321,42", "724.133,90"],
         "Más el %": ["0,50%", "0,75%", "1,00%"],
         "Sobre el excedente de ($)": ["0,00", "52.664.283,73", "114.105.948,16"]
@@ -188,161 +162,107 @@ with t_bbpp:
     st.table(df_bbpp)
 
 with t_deduc:
-    st.markdown("#### Deducciones Personales Art. 30 (Completa)")
+    st.markdown("#### Deducciones Personales Art. 30")
     df_ded = pd.DataFrame({
-        "Concepto": [
-            "Ganancia No Imponible (a)", 
-            "Cónyuge / Unión Convivencial (b)", 
-            "Hijo / Hijastro menor 18 (b)", 
-            "Hijo Incapacitado (b)", 
-            "Deducción Especial Autónoma (c)", 
-            "Deducción Especial Empleado/Jubilado (c)"
-        ],
-        "Monto Anual 2025 ($)": [
-            "4.093.923,60", 
-            "3.858.913,56", 
-            "1.946.069,52", 
-            "3.892.139,04", 
-            "8.187.847,20", 
-            "19.650.833,28"
-        ]
+        "Concepto": ["Ganancia No Imponible (a)", "Cónyuge (b)", "Hijo menor 18 (b)", "Hijo Incapacitado (b)", "Ded. Especial Autónoma (c)", "Ded. Especial Empleado (c)"],
+        "Monto Anual 2025 ($)": ["4.093.923,60", "3.858.913,56", "1.946.069,52", "3.892.139,04", "8.187.847,20", "19.650.833,28"]
     })
     st.table(df_ded)
 
 with t_soc:
-    st.markdown("#### Ganancias Sociedades (Completa)")
+    st.markdown("#### Ganancias Sociedades")
     df_soc = pd.DataFrame({
-        "Tramo Ganancia Neta Imponible ($)": [
-            "0 a 101.679.575,26", 
-            "101.679.575,26 a 1.016.795.752,60", 
-            "Más de 1.016.795.752,60"
-        ],
+        "Tramo Ganancia Neta ($)": ["0 a 101.679.575,26", "101.679.575,26 a 1.016.795.752,60", "Más de 1.016.795.752,60"],
         "Alícuota": ["25%", "30%", "35%"],
         "Monto Fijo ($)": ["0,00", "25.419.893,82", "299.954.747,02"]
     })
     st.table(df_soc)
 
 with t_mon:
-    st.markdown("#### Monotributo - Categorías Vigentes Dic 2025 (Completa)")
+    st.markdown("#### Monotributo Dic 2025")
     df_mono_full = pd.DataFrame({
-        "Categoría": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
-        "Ingresos Brutos Anuales ($)": [
-            "8.987.312,20", "13.345.101,40", "18.677.202,30", "23.211.504,10", "27.321.405,80", 
-            "34.112.508,40", "40.876.310,10", "62.011.514,50", "69.455.618,20", "79.445.820,10", "94.805.682,90"
-        ],
-        "Cuota Total Mensual ($)": [
-            "37.085,00", "42.216,00", "49.435,00", "63.357,00", "81.412,00", 
-            "104.256,00", "127.108,00", "244.135,00", "302.510,00", "359.845,00", "428.100,00"
-        ]
+        "Cat": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"],
+        "Ingresos Brutos ($)": ["8.9M", "13.3M", "18.6M", "23.2M", "27.3M", "34.1M", "40.8M", "62.0M", "69.4M", "79.4M", "94.8M"],
+        "Cuota Total ($)": ["37.085", "42.216", "49.435", "63.357", "81.412", "104.256", "127.108", "244.135", "302.510", "359.845", "428.100"]
     })
     st.table(df_mono_full)
 
 with t_rg:
-    st.markdown("#### RG 830 - Retenciones (Auditada)")
+    st.markdown("#### RG 830 - Retenciones")
     data_rg_full = {
-        "Concepto": ["Enajenación Bienes Muebles", "Locaciones de Obra/Servicios", "Honorarios Profesionales", "Alquileres", "Comisiones", "Fletes"],
-        "Mínimo No Sujeto ($)": ["224.000,00", "98.240,00", "98.240,00", "16.360,00", "45.100,00", "32.000,00"],
-        "Insc. (%)": ["2,0%", "2,0%", "Escala Art. 94", "6,0%", "3,0%", "0,25%"]
+        "Concepto": ["Bienes Muebles", "Obras/Servicios", "Honorarios", "Alquileres", "Comisiones", "Fletes"],
+        "Mínimo No Sujeto ($)": ["224.000", "98.240", "98.240", "16.360", "45.100", "32.000"],
+        "Insc. (%)": ["2,0%", "2,0%", "Escala", "6,0%", "3,0%", "0,25%"]
     }
     st.table(pd.DataFrame(data_rg_full))
 
 with t_calc:
-    st.markdown("#### Simulación de Base Imponible y Cálculo de Impuesto")
-    
+    st.markdown("### 🧮 Calculadora de Impuesto a las Ganancias (Estimación)")
+    st.info("Ingrese los datos mensuales para proyectar la retención acumulada.")
+
     # Inputs
-    c_cal1, c_cal2, c_cal3 = st.columns(3)
-    
-    with c_cal1:
-        meses = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio", 7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
-        mes_sel = st.selectbox("Seleccione Mes de Cálculo", options=list(meses.keys()), format_func=lambda x: meses[x])
-        
-    with c_cal2:
-        sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=1000.0, format="%.2f")
-        
-    with c_cal3:
-        opcion_sac = st.radio("¿Incluye Aguinaldo Proporcional?", ["Sí", "No"], horizontal=True)
-        sac = True if opcion_sac == "Sí" else False
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        meses = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio", 8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
+        mes_sel = st.selectbox("Mes de Cálculo", list(meses.keys()), format_func=lambda x: meses[x])
+    with c2:
+        sueldo = st.number_input("Sueldo Bruto Mensual ($)", min_value=0.0, step=10000.0, format="%.2f")
+    with c3:
+        sac_op = st.radio("¿Incluye SAC?", ["Sí", "No"], horizontal=True)
+        sac = True if sac_op == "Sí" else False
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Cálculos
+    bruto_acum = sueldo * mes_sel
+    if sac: bruto_acum += (sueldo / 12) * mes_sel
 
-    # --- LÓGICA DE CÁLCULO ---
-    # 1. Ingresos
-    ingreso_acumulado = sueldo * mes_sel
-    if sac:
-        ingreso_acumulado += (sueldo / 12) * mes_sel
-
-    # 2. Deducciones Acumuladas
     mni_anual = 4093923.60
     ded_esp_anual = 19650833.28
+    ded_acum = ((mni_anual + ded_esp_anual) / 12) * mes_sel
     
-    mni_acumulado = (mni_anual / 12) * mes_sel
-    ded_esp_acumulada = (ded_esp_anual / 12) * mes_sel
-    total_deducciones = mni_acumulado + ded_esp_acumulada
+    neto_sujeto = max(0, bruto_acum - ded_acum)
 
-    # 3. Ganancia Neta Sujeta a Impuesto
-    ganancia_neta = ingreso_acumulado - total_deducciones
-    if ganancia_neta < 0:
-        ganancia_neta = 0
-
-    # 4. Búsqueda en Escala Art 94 (Auditada)
+    # Búsqueda en escala
     escala = [
-        {"desde": 0, "hasta": 1636568.36, "fijo": 0.00, "tasa": 5, "excedente": 0},
-        {"desde": 1636568.36, "hasta": 3273136.72, "fijo": 81828.42, "tasa": 9, "excedente": 1636568.36},
-        {"desde": 3273136.72, "hasta": 4909705.08, "fijo": 229119.57, "tasa": 12, "excedente": 3273136.72},
-        {"desde": 4909705.08, "hasta": 7364557.62, "fijo": 425507.77, "tasa": 15, "excedente": 4909705.08},
-        {"desde": 7364557.62, "hasta": 14729115.24, "fijo": 793735.65, "tasa": 19, "excedente": 7364557.62},
-        {"desde": 14729115.24, "hasta": 22093672.86, "fijo": 2193001.60, "tasa": 23, "excedente": 14729115.24},
-        {"desde": 22093672.86, "hasta": 33140509.29, "fijo": 3886949.85, "tasa": 27, "excedente": 22093672.86},
-        {"desde": 33140509.29, "hasta": 49667273.02, "fijo": 6869585.69, "tasa": 31, "excedente": 33140509.29},
-        {"desde": 49667273.02, "hasta": float('inf'), "fijo": 11992882.45, "tasa": 35, "excedente": 49667273.02},
+        {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
+        {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
+        {"d": 3273136.72, "h": 4909705.08, "f": 229119.57, "p": 12, "exc": 3273136.72},
+        {"d": 4909705.08, "h": 7364557.62, "f": 425507.77, "p": 15, "exc": 4909705.08},
+        {"d": 7364557.62, "h": 14729115.24, "f": 793735.65, "p": 19, "exc": 7364557.62},
+        {"d": 14729115.24, "h": 22093672.86, "f": 2193001.60, "p": 23, "exc": 14729115.24},
+        {"d": 22093672.86, "h": 33140509.29, "f": 3886949.85, "p": 27, "exc": 22093672.86},
+        {"d": 33140509.29, "h": 49667273.02, "f": 6869585.69, "p": 31, "exc": 33140509.29},
+        {"d": 49667273.02, "h": float('inf'), "f": 11992882.45, "p": 35, "exc": 49667273.02},
     ]
 
-    tramo_encontrado = None
-    for tramo in escala:
-        if tramo["desde"] <= ganancia_neta < tramo["hasta"]:
-            tramo_encontrado = tramo
-            break
+    tramo = next((t for t in escala if t["d"] <= neto_sujeto < t["h"]), None)
+    impuesto = 0
+    if tramo:
+        impuesto = tramo["f"] + ((neto_sujeto - tramo["exc"]) * (tramo["p"] / 100))
 
-    # Cálculo final del impuesto
-    impuesto_determinado = 0
-    if tramo_encontrado:
-        base_excedente = ganancia_neta - tramo_encontrado["excedente"]
-        impuesto_variable = base_excedente * (tramo_encontrado["tasa"] / 100)
-        impuesto_determinado = tramo_encontrado["fijo"] + impuesto_variable
-
-    # --- RESULTADOS EN RECUADRO ROJO ---
-    st.markdown(f"""
-    <div style="border: 2px solid #FF4B4B; border-radius: 10px; padding: 20px; background-color: rgba(255, 75, 75, 0.05);">
-        <h4 style="color: #FF4B4B; margin-top: 0; text-align: center;">📉 Liquidación Estimada a {meses[mes_sel]}</h4>
+    st.markdown("---")
+    
+    # RECUADRO ROJO CON COMPONENTES NATIVOS (SEGURO)
+    # Usamos st.error porque tiene borde y fondo rojo por defecto en Streamlit
+    with st.container(border=True):
+        st.markdown(f"### 📉 Resultado a {meses[mes_sel]}")
         
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
-            <span>1. Bruto Acumulado:</span>
-            <strong>${ingreso_acumulado:,.2f}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;">
-            <span>2. Deducciones Acum. (MNI + Esp):</span>
-            <strong>-${total_deducciones:,.2f}</strong>
-        </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <span>3. Ganancia Neta Sujeta a Impuesto:</span>
-            <strong style="color: #003366;">${ganancia_neta:,.2f}</strong>
-        </div>
+        c_res1, c_res2, c_res3 = st.columns(3)
+        c_res1.metric("Bruto Acumulado", f"${bruto_acum:,.2f}")
+        c_res2.metric("Deducciones (MNI+Esp)", f"${ded_acum:,.2f}")
+        c_res3.metric("Neto Sujeto a Impuesto", f"${neto_sujeto:,.2f}")
         
-        <div style="background-color: #fff; padding: 15px; border-radius: 5px; border: 1px solid #ccc;">
-            <p style="margin:0; font-weight:bold; text-decoration: underline;">Ubicación en Escala Art. 94:</p>
-            <p style="margin:5px 0;">• <strong>Rango:</strong> ${tramo_encontrado['desde']:,.2f} a ${tramo_encontrado['hasta'] if tramo_encontrado['hasta'] != float('inf') else 'En adelante':,.2f}</p>
-            <p style="margin:5px 0;">• <strong>Monto Fijo:</strong> ${tramo_encontrado['fijo']:,.2f}</p>
-            <p style="margin:5px 0;">• <strong>Alícuota s/Excedente:</strong> {tramo_encontrado['tasa']}%</p>
-            <p style="margin:5px 0;">• <strong>Excedente de:</strong> ${tramo_encontrado['excedente']:,.2f}</p>
-            <hr>
-            <h3 style="text-align: center; color: #FF4B4B; margin: 10px 0;">Impuesto Determinado: ${impuesto_determinado:,.2f}</h3>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        st.divider()
+        
+        if tramo:
+            st.write(f"**Ubicación en Escala:** Tramo de ${tramo['d']:,.2f} a ${tramo['h'] if tramo['h']!=float('inf') else '...':,.2f}")
+            st.write(f"**Monto Fijo:** ${tramo['f']:,.2f} + **{tramo['p']}%** sobre excedente de ${tramo['exc']:,.2f}")
+        
+        # El resultado final destacado en rojo usando st.error
+        st.error(f"### Impuesto Determinado Estimado: ${impuesto:,.2f}")
 
 st.divider()
 
-# --- 8. NOVEDADES REGIONALES E INTERNACIONALES ---
+# --- 8. NOVEDADES ---
 c_usa, c_prov = st.columns(2)
 
 with c_usa:
@@ -360,13 +280,11 @@ with c_usa:
 with c_prov:
     with st.container(border=True):
         st.subheader("Novedades Provinciales (Dic 2025)")
-        
         st.markdown("**📍 Provincia de Santa Fe**")
         st.success("""
         * **Ley Impositiva 2026:** Aprobada. Tope aumento inmobiliario 140%.
         * **IIBB:** Alícuota reducida (2.5%) para PyMEs industriales.
         """)
-        
         st.markdown("**📍 Provincia de Tucumán**")
         st.warning("""
         * **Moratoria:** Prórroga hasta el 30/12/2025 (Dto. 3584/3). 
