@@ -214,10 +214,10 @@ with t_rg:
     st.table(pd.DataFrame(data_rg_full))
 
 with t_calc:
-    st.markdown("### 🧮 Calculadora de Impuesto a las Ganancias (Estimación)")
-    st.info("Ingrese los datos mensuales para proyectar la retención acumulada.")
+    st.markdown("### 🧮 Calculadora de Impuesto a las Ganancias (Tabla Oficial Acumulada)")
+    st.info("El cálculo utiliza la Escala Anual Oficial prorrateada al mes seleccionado, sin estimaciones de inflación.")
 
-    # Inputs (Versión Simplificada como se pidió en el 'revert')
+    # Inputs (Versión Simplificada)
     c1, c2, c3 = st.columns(3)
     with c1:
         meses = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio", 8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
@@ -228,36 +228,41 @@ with t_calc:
         sac_op = st.radio("¿Incluye SAC proporcional?", ["Sí", "No"], horizontal=True)
         sac = True if sac_op == "Sí" else False
 
-    # --- LÓGICA DE CÁLCULO (PROYECCIÓN) ---
-    def calcular_impuesto_proyectado(m, s_men, inc_sac):
-        # 1. Base Tope Aportes al mes m (Ajustada desde Dic 2025)
-        valor_tope_diciembre = 3731212.01
-        base_tope_m = valor_tope_diciembre / (1.035**(12 - m))
+    # --- LÓGICA DE CÁLCULO ---
+    def calcular_impuesto_oficial(m, s_men, inc_sac):
+        # 1. Base Tope Aportes (Oficial Diciembre 2025)
+        # Usamos el valor oficial para el periodo. Si estuviéramos en meses anteriores
+        # la tabla de ARCA indicaría otro valor. Aquí usamos el valor de cierre solicitado.
+        base_tope_oficial = 3731212.01 
         
         # 2. Aportes Mensual (Topeado)
-        base_calc_ap = min(s_men, base_tope_m)
+        base_calc_ap = min(s_men, base_tope_oficial)
         aporte_mensual = base_calc_ap * 0.17
         
-        # 3. Proyección Anualizada al mes m
+        # 3. Proyección Anualizada al mes m (Acumulado)
         bruto_ac = s_men * m
         aportes_ac = aporte_mensual * m
         
         if inc_sac:
             bruto_ac += (s_men / 12) * m
             # Aporte SAC proporcional (aprox)
-            base_sac = min(s_men / 2, base_tope_m / 2)
+            base_sac = min(s_men / 2, base_tope_oficial / 2)
             aportes_ac += (base_sac * 0.17 / 12) * m
             
-        # 4. Deducciones
-        mni = 4093923.60
-        ded_esp = 19650833.28
-        ded_ac = ((mni + ded_esp) / 12) * m
+        # 4. Deducciones (Tabla Oficial Acumulada)
+        # Tomamos los valores anuales auditados y los proporcionamos por el mes
+        mni_anual = 4093923.60
+        ded_esp_anual = 19650833.28
+        ded_ac = ((mni_anual + ded_esp_anual) / 12) * m
         
         # 5. Neto
         neto = max(0, bruto_ac - ded_ac - aportes_ac)
         
-        # 6. Escala Art 94
-        escala = [
+        # 6. Escala Art 94 (Tabla Oficial Acumulada)
+        # Los valores de la tabla anual se dividen por 12 y se multiplican por el mes
+        # para obtener la tabla vigente acumulada al periodo.
+        
+        base_escala = [
             {"d": 0, "h": 1636568.36, "f": 0, "p": 5, "exc": 0},
             {"d": 1636568.36, "h": 3273136.72, "f": 81828.42, "p": 9, "exc": 1636568.36},
             {"d": 3273136.72, "h": 4909705.08, "f": 229119.57, "p": 12, "exc": 3273136.72},
@@ -269,20 +274,33 @@ with t_calc:
             {"d": 49667273.02, "h": float('inf'), "f": 11992882.45, "p": 35, "exc": 49667273.02},
         ]
         
-        tramo_obj = next((t for t in escala if t["d"] <= neto < t["h"]), None)
+        escala_acumulada = []
+        prop = m / 12
+        
+        for tramo in base_escala:
+            t_nuevo = {
+                "d": tramo["d"] * prop,
+                "h": tramo["h"] * prop if tramo["h"] != float('inf') else float('inf'),
+                "f": tramo["f"] * prop,
+                "p": tramo["p"],
+                "exc": tramo["exc"] * prop
+            }
+            escala_acumulada.append(t_nuevo)
+        
+        tramo_obj = next((t for t in escala_acumulada if t["d"] <= neto < t["h"]), None)
         imp = 0.0
         if tramo_obj:
             imp = tramo_obj["f"] + ((neto - tramo_obj["exc"]) * (tramo_obj["p"] / 100))
             
-        return imp, bruto_ac, aportes_ac, ded_ac, neto, tramo_obj, base_tope_m
+        return imp, bruto_ac, aportes_ac, ded_ac, neto, tramo_obj, base_tope_oficial
 
     # 3. Ejecución Actual
-    imp_actual, br_acum, ap_acum, de_acum, nt_suj, tramo_act, tope_act = calcular_impuesto_proyectado(mes_sel, sueldo, sac)
+    imp_actual, br_acum, ap_acum, de_acum, nt_suj, tramo_act, tope_act = calcular_impuesto_oficial(mes_sel, sueldo, sac)
     
     # 4. Ejecución Anterior
     imp_anterior = 0.0
     if mes_sel > 1:
-        imp_anterior, _, _, _, _, _, _ = calcular_impuesto_proyectado(mes_sel - 1, sueldo, sac)
+        imp_anterior, _, _, _, _, _, _ = calcular_impuesto_oficial(mes_sel - 1, sueldo, sac)
         
     retencion_mes = imp_actual - imp_anterior
 
@@ -299,11 +317,11 @@ with t_calc:
         
         st.divider()
 
-        st.write(f"ℹ️ **Base Imponible Máxima para Aportes ({meses[mes_sel]} 2025):** ${tope_act:,.2f}")
+        st.write(f"ℹ️ **Base Imponible Máxima para Aportes (Dic 2025):** ${tope_act:,.2f}")
         st.markdown("") 
 
         if tramo_act:
-            st.write(f"**Ubicación en Escala:** Tramo de ${tramo_act['d']:,.2f} a ${tramo_act['h'] if tramo_act['h']!=float('inf') else '...':,.2f}")
+            st.write(f"**Ubicación en Escala Acumulada ({meses[mes_sel]}):** Tramo de ${tramo_act['d']:,.2f} a ${tramo_act['h'] if tramo_act['h']!=float('inf') else '...':,.2f}")
             st.write(f"**Monto Fijo:** ${tramo_act['f']:,.2f} + **{tramo_act['p']}%** sobre excedente de ${tramo_act['exc']:,.2f}")
         
         st.divider()
