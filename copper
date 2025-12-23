@@ -1,0 +1,50 @@
+import requests
+import schedule
+import time
+from datetime import datetime
+
+# --- CONFIGURACIÓN ---
+# Regístrate en commodities-api.com o metals-api.com para obtener tu clave
+API_KEY = "TU_API_KEY_AQUI" 
+BASE_URL = "https://commodities-api.com/api/latest"
+
+def obtener_precios():
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Actualizando cotizaciones...")
+    
+    params = {
+        'access_key': API_KEY,
+        'base': 'USD',
+        'symbols': 'LME-XCU,LME-ALU'  # XCU = Cobre, ALU = Aluminio
+    }
+
+    try:
+        response = requests.get(BASE_URL, params=params)
+        data = response.json()
+
+        if data.get('success'):
+            # Las APIs de metales suelen devolver el valor de 1 USD en metal (1/precio)
+            # o el precio directo por tonelada según el plan.
+            rates = data['rates']
+            
+            # Ejemplo de cálculo si devuelven tasa inversa (común en planes gratuitos)
+            precio_cobre = 1 / rates['LME-XCU']
+            precio_aluminio = 1 / rates['LME-ALU']
+
+            print(f"Cobre (LME): ${precio_cobre:,.2f} USD/ton")
+            print(f"Aluminio (LME): ${precio_aluminio:,.2f} USD/ton")
+        else:
+            print("Error en la API:", data.get('error', 'Desconocido'))
+
+    except Exception as e:
+        print(f"Error de conexión: {e}")
+
+# Programar la tarea cada 1 hora
+schedule.every(1).hours.do(obtener_precios)
+
+# Ejecución inicial
+obtener_precios()
+
+print("Servicio iniciado. Presiona Ctrl+C para detener.")
+while True:
+    schedule.run_pending()
+    time.sleep(1)
